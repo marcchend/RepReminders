@@ -32,14 +32,7 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if reminders.isEmpty {
-                    emptyState
-                } else {
-                    reminderList
-                }
-            }
-            .toolbar(reminders.isEmpty ? .hidden : .visible, for: .navigationBar)
+            reminderList
             .toolbar {
                 if isSelectionMode && !reminders.isEmpty {
                     ToolbarItem(placement: .topBarLeading) {
@@ -67,6 +60,7 @@ struct ContentView: View {
                             .animation(.easeInOut(duration: 0.18), value: isSelectionMode)
                             .fixedSize(horizontal: true, vertical: false)
                     }
+                    .disabled(reminders.isEmpty)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -155,6 +149,22 @@ struct ContentView: View {
 
     private var reminderList: some View {
         List {
+            if reminders.isEmpty {
+                Section {
+                    VStack(spacing: 10) {
+                        Label("Aucun rappel", systemImage: "bell.slash.fill")
+                            .font(.headline)
+                        Text("Appuie sur **+** pour créer un rappel répétitif.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+                    .listRowBackground(Color.clear)
+                }
+            }
+
             if !activeReminders.isEmpty {
                 Section {
                     ForEach(activeReminders) { reminder in
@@ -169,6 +179,7 @@ struct ContentView: View {
                         } onDelete: {
                             deleteReminder(reminder)
                         }
+                        .listRowSeparator(.hidden)
                     }
                 } header: {
                     Text("ACTIFS · \(activeReminders.count)")
@@ -186,11 +197,14 @@ struct ContentView: View {
                             isSelected: selectedReminderIDs.contains(reminder.id)
                         ) {
                             toggleSelection(for: reminder)
+                        } onMarkAsNotCompleted: {
+                            markReminderAsNotCompleted(reminder)
                         } onEdit: {
                             editingReminder = reminder
                         } onDelete: {
                             deleteReminder(reminder)
                         }
+                        .listRowSeparator(.hidden)
                     }
                 } header: {
                     Text("TERMINÉS")
@@ -200,19 +214,10 @@ struct ContentView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .listRowSeparator(.hidden)
+        .listSectionSeparator(.hidden, edges: .all)
         .scrollContentBackground(.hidden)
         .background(Color(uiColor: .systemGroupedBackground))
-    }
-
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Aucun rappel", systemImage: "bell.slash.fill")
-        } description: {
-            Text("Appuie sur **+** pour créer un rappel répétitif.")
-        } actions: {
-            Button("Créer un rappel") { showingAddReminder = true }
-                .buttonStyle(.bordered)
-        }
     }
 
     // MARK: – Actions
@@ -313,6 +318,14 @@ struct ContentView: View {
             isSelectionMode = false
         }
     }
+
+    private func markReminderAsNotCompleted(_ reminder: Reminder) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            reminder.isCompleted = false
+            NotificationManager.shared.cancelReminder(reminder)
+            NotificationManager.shared.scheduleReminder(reminder)
+        }
+    }
 }
 
 // MARK: – Active Reminder Row
@@ -329,11 +342,11 @@ struct ReminderRow: View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(reminder.title)
-                    .font(.headline)
+                    .font(.headline.weight(.regular))
 
                 HStack(spacing: 12) {
                     Label(
-                        reminder.startDate.formatted(date: .abbreviated, time: .shortened),
+                        reminder.startDate.localizedReminderDateTime,
                         systemImage: "clock"
                     )
                     .font(.caption.monospacedDigit())
@@ -375,7 +388,7 @@ struct ReminderRow: View {
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
             if !isSelectionMode {
                 Button {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.25)) {
                         reminder.isCompleted = true
                         NotificationManager.shared.cancelReminder(reminder)
                     }
@@ -412,21 +425,32 @@ struct CompletedReminderRow: View {
     let isSelectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
+    let onMarkAsNotCompleted: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(reminder.title)
-                    .font(.subheadline)
+                    .font(.headline.weight(.regular))
                     .strikethrough()
                     .foregroundStyle(.secondary)
-                Text(reminder.startDate.formatted(date: .abbreviated, time: .shortened))
+                HStack(spacing: 12) {
+                    Label(
+                        reminder.startDate.localizedReminderDateTime,
+                        systemImage: "clock"
+                    )
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
+
+                    Label("/ \(reminder.intervalMinutes) min", systemImage: "repeat")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
-            Spacer()
+
+            Spacer(minLength: 0)
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.tertiary)
         }
@@ -455,6 +479,18 @@ struct CompletedReminderRow: View {
                 onToggleSelection()
             }
         }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            if !isSelectionMode {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        onMarkAsNotCompleted()
+                    }
+                } label: {
+                    Label("Non terminé", systemImage: "arrow.uturn.backward.circle.fill")
+                }
+                .tint(.white)
+            }
+        }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if !isSelectionMode {
                 Button {
@@ -472,6 +508,15 @@ struct CompletedReminderRow: View {
                 .tint(.gray)
             }
         }
+    }
+}
+
+private extension Date {
+    var localizedReminderDateTime: String {
+        formatted(
+            Date.FormatStyle(date: .abbreviated, time: .shortened)
+                .locale(.autoupdatingCurrent)
+        )
     }
 }
 

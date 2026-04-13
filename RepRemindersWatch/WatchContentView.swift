@@ -138,7 +138,7 @@ struct WatchReminderRow: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
 
-            Text(reminder.startDate.formatted(date: .omitted, time: .shortened))
+            Text(reminder.startDate.localizedWatchReminderTime)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
@@ -183,6 +183,15 @@ struct WatchReminderRow: View {
                 onToggleSelection()
             }
         }
+    }
+}
+
+private extension Date {
+    var localizedWatchReminderTime: String {
+        formatted(
+            Date.FormatStyle(date: .omitted, time: .shortened)
+                .locale(.autoupdatingCurrent)
+        )
     }
 }
 

@@ -48,7 +48,10 @@ final class NotificationManager: NSObject {
 
             let content = UNMutableNotificationContent()
             content.title = reminder.title
-            content.subtitle = fireDate.formatted(date: .omitted, time: .shortened)
+            content.subtitle = fireDate.formatted(
+                Date.FormatStyle(date: .omitted, time: .shortened)
+                    .locale(.autoupdatingCurrent)
+            )
             content.body = ""
             content.sound = .default
             content.categoryIdentifier = "REMINDER_CATEGORY"
