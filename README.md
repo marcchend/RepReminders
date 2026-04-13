@@ -1,4 +1,4 @@
-# 🔔 RepeatRemind
+# 🔔 RepReminders
 
 Application de rappels répétitifs pour iOS, iPadOS, macOS et watchOS.
 Envoie des notifications toutes les X minutes jusqu'à ce que tu valides.
@@ -18,7 +18,7 @@ Envoie des notifications toutes les X minutes jusqu'à ce que tu valides.
 ### Étape 1 — Décompresser et lancer le setup
 
 ```bash
-cd ~/Downloads/RepeatRemind
+cd ~/Downloads/RepReminders
 chmod +x setup.sh
 ./setup.sh
 ```
@@ -27,10 +27,10 @@ Le script installe XcodeGen (via Homebrew), génère le projet `.xcodeproj` et o
 
 ### Étape 2 — Configurer la signature dans Xcode
 
-1. Sélectionne la target **RepeatRemind**
+1. Sélectionne la target **RepReminders**
 2. Onglet **Signing & Capabilities**
 3. Choisis ton **Team** (compte Apple Developer)
-4. Répète pour la target **RepeatRemindWatch**
+4. Répète pour la target **RepRemindersWatch**
 
 ### Étape 3 — Lancer l'app
 
@@ -51,7 +51,7 @@ Le script installe XcodeGen (via Homebrew), génère le projet `.xcodeproj` et o
 
 ### Depuis l'app Raccourcis Apple
 
-Deux actions sont disponibles sous "RepeatRemind" :
+Deux actions sont disponibles sous "RepReminders" :
 
 **"Créer un rappel répétitif"**
 - Titre, Date de début, Intervalle (min), Nombre max de répétitions
@@ -97,6 +97,6 @@ Second raccourci (widget ou bouton d'action) :
 
 ```
 Shared/     ← Reminder.swift, NotificationManager.swift, AppIntents.swift
-iOS/        ← RepeatRemindApp.swift, ContentView.swift, AddReminderView.swift
-watchOS/    ← RepeatRemindWatchApp.swift, WatchContentView.swift
+iOS/        ← RepRemindersApp.swift, ContentView.swift, AddReminderView.swift
+watchOS/    ← RepRemindersWatchApp.swift, WatchContentView.swift
 ```

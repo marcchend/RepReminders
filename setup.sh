@@ -51,4 +51,4 @@ echo "       Xcode → RepeatRemind (target) → Signing & Capabilities"
 echo "    2. Lance l'app sur ton iPhone ou simulateur"
 echo "    3. Autorise les notifications au premier lancement"
 echo ""
-open RepeatRemind.xcodeproj
+open RepReminders.xcodeproj

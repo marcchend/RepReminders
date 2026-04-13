@@ -3,7 +3,7 @@ import SwiftData
 import UserNotifications
 
 @main
-struct RepeatRemindWatchApp: App {
+struct RepRemindersWatchApp: App {
     var sharedModelContainer: ModelContainer = {
         do {
             return try makeSharedContainer()

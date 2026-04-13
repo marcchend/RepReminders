@@ -7,15 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA000023AA000023AA000023 /* RepeatRemindApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016AA000016AA000016 /* RepeatRemindApp.swift */; };
+		AA000023AA000023AA000023 /* RepRemindersApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000016AA000016AA000016 /* RepRemindersApp.swift */; };
 		AA000024AA000024AA000024 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000017AA000017AA000017 /* ContentView.swift */; };
 		AA000025AA000025AA000025 /* AddReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000018AA000018AA000018 /* AddReminderView.swift */; };
 		AA000026AA000026AA000026 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000019AA000019AA000019 /* Reminder.swift */; };
 		AA000027AA000027AA000027 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020AA000020AA000020 /* NotificationManager.swift */; };
 		AA000028AA000028AA000028 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021AA000021AA000021 /* AppIntents.swift */; };
 		AA000029AA000029AA000029 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000022AA000022AA000022 /* Assets.xcassets */; };
-		BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DD000001DD000001DD000001 /* RepeatRemindWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		CC000001CC000001CC000001 /* RepeatRemindWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* RepeatRemindWatchApp.swift */; };
+		BB000001BB000001BB000001 /* RepRemindersWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DD000001DD000001DD000001 /* RepRemindersWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CC000001CC000001CC000001 /* RepRemindersWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* RepRemindersWatchApp.swift */; };
 		CC000002CC000002CC000002 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003DD000003DD000003 /* WatchContentView.swift */; };
 		CC000003CC000003CC000003 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000019AA000019AA000019 /* Reminder.swift */; };
 		CC000004CC000004CC000004 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020AA000020AA000020 /* NotificationManager.swift */; };
@@ -28,7 +28,7 @@
 			containerPortal = AA000001AA000001AA000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = FF000001FF000001FF000001;
-			remoteInfo = RepeatRemindWatch;
+			remoteInfo = RepRemindersWatch;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -39,7 +39,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */,
+				BB000001BB000001BB000001 /* RepRemindersWatch.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -47,16 +47,16 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AA000006AA000006AA000006 /* RepeatRemind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RepeatRemind.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA000016AA000016AA000016 /* RepeatRemindApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatRemindApp.swift; sourceTree = "<group>"; };
+		AA000006AA000006AA000006 /* RepReminders.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RepReminders.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000016AA000016AA000016 /* RepRemindersApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepRemindersApp.swift; sourceTree = "<group>"; };
 		AA000017AA000017AA000017 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA000018AA000018AA000018 /* AddReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderView.swift; sourceTree = "<group>"; };
 		AA000019AA000019AA000019 /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
 		AA000020AA000020AA000020 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		AA000021AA000021AA000021 /* AppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntents.swift; sourceTree = "<group>"; };
 		AA000022AA000022AA000022 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		DD000001DD000001DD000001 /* RepeatRemindWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RepeatRemindWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		DD000002DD000002DD000002 /* RepeatRemindWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepeatRemindWatchApp.swift; sourceTree = "<group>"; };
+		DD000001DD000001DD000001 /* RepRemindersWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RepRemindersWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD000002DD000002DD000002 /* RepRemindersWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepRemindersWatchApp.swift; sourceTree = "<group>"; };
 		DD000003DD000003DD000003 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
 		DD000004DD000004DD000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,8 +82,8 @@
 		AA000003AA000003AA000003 = {
 			isa = PBXGroup;
 			children = (
-				AA000005AA000005AA000005 /* RepeatRemind */,
-				EE000001EE000001EE000001 /* RepeatRemindWatch */,
+				AA000005AA000005AA000005 /* RepReminders */,
+				EE000001EE000001EE000001 /* RepRemindersWatch */,
 				AA000004AA000004AA000004 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -91,16 +91,16 @@
 		AA000004AA000004AA000004 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA000006AA000006AA000006 /* RepeatRemind.app */,
-				DD000001DD000001DD000001 /* RepeatRemindWatch.app */,
+				AA000006AA000006AA000006 /* RepReminders.app */,
+				DD000001DD000001DD000001 /* RepRemindersWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		AA000005AA000005AA000005 /* RepeatRemind */ = {
+		AA000005AA000005AA000005 /* RepReminders */ = {
 			isa = PBXGroup;
 			children = (
-				AA000016AA000016AA000016 /* RepeatRemindApp.swift */,
+				AA000016AA000016AA000016 /* RepRemindersApp.swift */,
 				AA000017AA000017AA000017 /* ContentView.swift */,
 				AA000018AA000018AA000018 /* AddReminderView.swift */,
 				AA000019AA000019AA000019 /* Reminder.swift */,
@@ -108,25 +108,25 @@
 				AA000021AA000021AA000021 /* AppIntents.swift */,
 				AA000022AA000022AA000022 /* Assets.xcassets */,
 			);
-			path = RepeatRemind;
+			path = RepReminders;
 			sourceTree = "<group>";
 		};
-		EE000001EE000001EE000001 /* RepeatRemindWatch */ = {
+		EE000001EE000001EE000001 /* RepRemindersWatch */ = {
 			isa = PBXGroup;
 			children = (
-				DD000002DD000002DD000002 /* RepeatRemindWatchApp.swift */,
+				DD000002DD000002DD000002 /* RepRemindersWatchApp.swift */,
 				DD000003DD000003DD000003 /* WatchContentView.swift */,
 				DD000004DD000004DD000004 /* Assets.xcassets */,
 			);
-			path = RepeatRemindWatch;
+			path = RepRemindersWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA000002AA000002AA000002 /* RepeatRemind */ = {
+		AA000002AA000002AA000002 /* RepReminders */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA000013AA000013AA000013 /* Build configuration list for PBXNativeTarget "RepeatRemind" */;
+			buildConfigurationList = AA000013AA000013AA000013 /* Build configuration list for PBXNativeTarget "RepReminders" */;
 			buildPhases = (
 				AA000007AA000007AA000007 /* Sources */,
 				AA000008AA000008AA000008 /* Resources */,
@@ -138,14 +138,14 @@
 			dependencies = (
 				BB000004BB000004BB000004 /* PBXTargetDependency */,
 			);
-			name = RepeatRemind;
-			productName = RepeatRemind;
-			productReference = AA000006AA000006AA000006 /* RepeatRemind.app */;
+			name = RepReminders;
+			productName = RepReminders;
+			productReference = AA000006AA000006AA000006 /* RepReminders.app */;
 			productType = "com.apple.product-type.application";
 		};
-		FF000001FF000001FF000001 /* RepeatRemindWatch */ = {
+		FF000001FF000001FF000001 /* RepRemindersWatch */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = HH000003HH000003HH000003 /* Build configuration list for PBXNativeTarget "RepeatRemindWatch" */;
+			buildConfigurationList = HH000003HH000003HH000003 /* Build configuration list for PBXNativeTarget "RepRemindersWatch" */;
 			buildPhases = (
 				GG000001GG000001GG000001 /* Sources */,
 				GG000002GG000002GG000002 /* Resources */,
@@ -155,9 +155,9 @@
 			);
 			dependencies = (
 			);
-			name = RepeatRemindWatch;
-			productName = RepeatRemindWatch;
-			productReference = DD000001DD000001DD000001 /* RepeatRemindWatch.app */;
+			name = RepRemindersWatch;
+			productName = RepRemindersWatch;
+			productReference = DD000001DD000001DD000001 /* RepRemindersWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -178,7 +178,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA000010AA000010AA000010 /* Build configuration list for PBXProject "RepeatRemind" */;
+			buildConfigurationList = AA000010AA000010AA000010 /* Build configuration list for PBXProject "RepReminders" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -192,8 +192,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA000002AA000002AA000002 /* RepeatRemind */,
-				FF000001FF000001FF000001 /* RepeatRemindWatch */,
+				AA000002AA000002AA000002 /* RepReminders */,
+				FF000001FF000001FF000001 /* RepRemindersWatch */,
 			);
 		};
 /* End PBXProject section */
@@ -222,7 +222,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA000023AA000023AA000023 /* RepeatRemindApp.swift in Sources */,
+				AA000023AA000023AA000023 /* RepRemindersApp.swift in Sources */,
 				AA000024AA000024AA000024 /* ContentView.swift in Sources */,
 				AA000025AA000025AA000025 /* AddReminderView.swift in Sources */,
 				AA000026AA000026AA000026 /* Reminder.swift in Sources */,
@@ -235,7 +235,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CC000001CC000001CC000001 /* RepeatRemindWatchApp.swift in Sources */,
+				CC000001CC000001CC000001 /* RepRemindersWatchApp.swift in Sources */,
 				CC000002CC000002CC000002 /* WatchContentView.swift in Sources */,
 				CC000003CC000003CC000003 /* Reminder.swift in Sources */,
 				CC000004CC000004CC000004 /* NotificationManager.swift in Sources */,
@@ -247,7 +247,7 @@
 /* Begin PBXTargetDependency section */
 		BB000004BB000004BB000004 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = FF000001FF000001FF000001 /* RepeatRemindWatch */;
+			target = FF000001FF000001FF000001 /* RepRemindersWatch */;
 			targetProxy = BB000003BB000003BB000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -386,7 +386,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepReminders utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -416,7 +416,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepReminders utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -445,7 +445,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepReminders utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -472,7 +472,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
-				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepReminders utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -493,7 +493,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA000010AA000010AA000010 /* Build configuration list for PBXProject "RepeatRemind" */ = {
+		AA000010AA000010AA000010 /* Build configuration list for PBXProject "RepReminders" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA000011AA000011AA000011 /* Debug */,
@@ -502,7 +502,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA000013AA000013AA000013 /* Build configuration list for PBXNativeTarget "RepeatRemind" */ = {
+		AA000013AA000013AA000013 /* Build configuration list for PBXNativeTarget "RepReminders" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA000014AA000014AA000014 /* Debug */,
@@ -511,7 +511,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		HH000003HH000003HH000003 /* Build configuration list for PBXNativeTarget "RepeatRemindWatch" */ = {
+		HH000003HH000003HH000003 /* Build configuration list for PBXNativeTarget "RepRemindersWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				HH000001HH000001HH000001 /* Debug */,

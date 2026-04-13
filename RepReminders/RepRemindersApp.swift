@@ -6,7 +6,7 @@ import WatchConnectivity
 #endif
 
 @main
-struct RepeatRemindApp: App {
+struct RepRemindersApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var sharedModelContainer: ModelContainer = {
@@ -40,7 +40,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // ⚠️ Indispensable : enregistre les App Shortcuts auprès du système
         // Sans cela, les actions n'apparaissent pas dans l'app Raccourcis.
         #if !os(watchOS)
-        RepeatRemindShortcuts.updateAppShortcutParameters()
+        RepRemindersShortcuts.updateAppShortcutParameters()
         #endif
 
         PhoneWatchSyncManager.shared.activate()

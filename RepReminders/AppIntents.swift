@@ -15,7 +15,7 @@ struct CreateReminderIntent: AppIntent {
     static var title: LocalizedStringResource = "Créer un rappel"
     static var description = IntentDescription(
         "Crée un rappel qui envoie une notification répétée toutes les X minutes jusqu'à suppression.",
-        categoryName: "RepeatRemind"
+        categoryName: "RepReminders"
     )
 
     @Parameter(title: "Titre du rappel")
@@ -60,7 +60,7 @@ struct DeleteReminderIntent: AppIntent {
     static var title: LocalizedStringResource = "Supprimer un rappel"
     static var description = IntentDescription(
         "Supprime un rappel existant et annule toutes ses notifications en attente.",
-        categoryName: "RepeatRemind"
+        categoryName: "RepReminders"
     )
 
     @Parameter(title: "Titre du rappel")
@@ -95,7 +95,7 @@ struct CompleteReminderIntent: AppIntent {
     static var title: LocalizedStringResource = "Valider un rappel"
     static var description = IntentDescription(
         "Marque un rappel comme complété et arrête toutes ses notifications en attente.",
-        categoryName: "RepeatRemind"
+        categoryName: "RepReminders"
     )
 
     @Parameter(title: "Titre du rappel")
@@ -277,7 +277,7 @@ struct GetRemindersIntent: AppIntent {
     static var title: LocalizedStringResource = "Obtenir rappels"
     static var description = IntentDescription(
         "Retourne des rappels filtrés par statut, date de début, date de création, etc. Compatible automatisations.",
-        categoryName: "RepeatRemind"
+        categoryName: "RepReminders"
     )
 
     // ── Filtre statut ────────────────────────────────────────────────────
@@ -383,7 +383,7 @@ struct GetRemindersIntent: AppIntent {
 // Les phrases DOIVENT contenir \(.applicationName).
 
 #if !os(watchOS)
-struct RepeatRemindShortcuts: AppShortcutsProvider {
+struct RepRemindersShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: CreateReminderIntent(),
