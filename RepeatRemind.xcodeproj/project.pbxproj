@@ -14,6 +14,7 @@
 		AA000027AA000027AA000027 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020AA000020AA000020 /* NotificationManager.swift */; };
 		AA000028AA000028AA000028 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021AA000021AA000021 /* AppIntents.swift */; };
 		AA000029AA000029AA000029 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000022AA000022AA000022 /* Assets.xcassets */; };
+		BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DD000001DD000001DD000001 /* RepeatRemindWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CC000001CC000001CC000001 /* RepeatRemindWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* RepeatRemindWatchApp.swift */; };
 		CC000002CC000002CC000002 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003DD000003DD000003 /* WatchContentView.swift */; };
 		CC000003CC000003CC000003 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000019AA000019AA000019 /* Reminder.swift */; };
@@ -21,6 +22,30 @@
 		CC000005CC000005CC000005 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021AA000021AA000021 /* AppIntents.swift */; };
 		CC000006CC000006CC000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD000004DD000004DD000004 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BB000003BB000003BB000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA000001AA000001AA000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FF000001FF000001FF000001;
+			remoteInfo = RepeatRemindWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BB000002BB000002BB000002 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		AA000006AA000006AA000006 /* RepeatRemind.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RepeatRemind.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,10 +132,12 @@
 				AA000007AA000007AA000007 /* Sources */,
 				AA000008AA000008AA000008 /* Resources */,
 				AA000009AA000009AA000009 /* Frameworks */,
+				BB000002BB000002BB000002 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BB000004BB000004BB000004 /* PBXTargetDependency */,
 			);
 			name = RepeatRemind;
 			productName = RepeatRemind;
@@ -142,7 +169,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					AA000002AA000002AA000002 = {
 						CreatedOnToolsVersion = 15.0;
@@ -219,12 +246,21 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		BB000004BB000004BB000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FF000001FF000001FF000001 /* RepeatRemindWatch */;
+			targetProxy = BB000003BB000003BB000003 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		AA000011AA000011AA000011 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -244,6 +280,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLES = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
@@ -255,6 +292,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = R3RNQL3V3T;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -277,6 +315,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -287,6 +326,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -306,6 +346,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLES = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
@@ -317,6 +358,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = R3RNQL3V3T;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -331,6 +373,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -342,7 +385,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R3RNQL3V3T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
@@ -372,7 +414,6 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = R3RNQL3V3T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
@@ -404,6 +445,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -429,6 +471,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
