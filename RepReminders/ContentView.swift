@@ -5,6 +5,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Reminder.startDate, order: .forward) private var reminders: [Reminder]
     @State private var showingAddReminder = false
+    @State private var editingReminder: Reminder?
     @State private var isSelectionMode = false
     @State private var selectedReminderIDs: Set<UUID> = []
 
@@ -18,6 +19,16 @@ struct ContentView: View {
 
     private var activeReminders: [Reminder] { reminders.filter { !$0.isCompleted } }
     private var completedReminders: [Reminder] { reminders.filter { $0.isCompleted } }
+    private var allReminderIDs: Set<UUID> { Set(reminders.map(\.id)) }
+    private var selectedReminders: [Reminder] {
+        reminders.filter { selectedReminderIDs.contains($0.id) }
+    }
+    private var areAllRemindersSelected: Bool {
+        !allReminderIDs.isEmpty && allReminderIDs.isSubset(of: selectedReminderIDs)
+    }
+    private var shouldShowMarkAsNotCompleted: Bool {
+        !selectedReminders.isEmpty && selectedReminders.allSatisfy(\.isCompleted)
+    }
 
     var body: some View {
         NavigationStack {
@@ -28,17 +39,33 @@ struct ContentView: View {
                     reminderList
                 }
             }
-            .navigationTitle("Rappels")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(reminders.isEmpty ? .hidden : .visible, for: .navigationBar)
             .toolbar {
+                if isSelectionMode && !reminders.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            toggleSelectAll()
+                        } label: {
+                            Text(areAllRemindersSelected ? "Tout déselec." : "Tout sélec.")
+                                .contentTransition(.opacity)
+                                .animation(.easeInOut(duration: 0.18), value: areAllRemindersSelected)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSelectionMode ? "Annuler" : "Sélectionner") {
+                    Button {
                         withAnimation(.spring(response: 0.48, dampingFraction: 0.9)) {
                             isSelectionMode.toggle()
+                            if !isSelectionMode {
+                                selectedReminderIDs.removeAll()
+                            }
                         }
-                        if !isSelectionMode {
-                            selectedReminderIDs.removeAll()
-                        }
+                    } label: {
+                        Text(isSelectionMode ? "Annuler" : "Sélectionner")
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut(duration: 0.18), value: isSelectionMode)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -52,13 +79,36 @@ struct ContentView: View {
             .sheet(isPresented: $showingAddReminder) {
                 AddReminderView()
             }
+            .sheet(
+                isPresented: Binding(
+                    get: { editingReminder != nil },
+                    set: { if !$0 { editingReminder = nil } }
+                )
+            ) {
+                if let reminder = editingReminder {
+                    EditReminderSheet(reminder: reminder) { title, startDate, intervalMinutes, maxRepetitions in
+                        applyEdit(
+                            for: reminder,
+                            title: title,
+                            startDate: startDate,
+                            intervalMinutes: intervalMinutes,
+                            maxRepetitions: maxRepetitions
+                        )
+                    }
+                }
+            }
         }
         .tint(.primary)
         .safeAreaInset(edge: .bottom) {
             if isSelectionMode {
                 HStack(spacing: 12) {
-                    Button("Terminer") {
-                        completeSelected()
+                    Button {
+                        performPrimarySelectionAction()
+                    } label: {
+                        Text(shouldShowMarkAsNotCompleted ? "Non terminé" : "Terminer")
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut(duration: 0.18), value: shouldShowMarkAsNotCompleted)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
                     .buttonStyle(.bordered)
                     .tint(isSelectionMode ? .white : .secondary)
@@ -82,7 +132,6 @@ struct ContentView: View {
                 .animation(.easeInOut(duration: 0.26), value: isSelectionMode)
             }
         }
-        .animation(.spring(response: 0.48, dampingFraction: 0.9), value: isSelectionMode)
         .task {
             _ = await NotificationManager.shared.requestAuthorization()
             await NotificationManager.shared.removeOrphanedNotifications(
@@ -115,9 +164,12 @@ struct ContentView: View {
                             isSelected: selectedReminderIDs.contains(reminder.id)
                         ) {
                             toggleSelection(for: reminder)
+                        } onEdit: {
+                            editingReminder = reminder
+                        } onDelete: {
+                            deleteReminder(reminder)
                         }
                     }
-                    .onDelete { offsets in delete(from: activeReminders, at: offsets) }
                 } header: {
                     Text("ACTIFS · \(activeReminders.count)")
                         .font(.caption2.weight(.semibold))
@@ -134,9 +186,12 @@ struct ContentView: View {
                             isSelected: selectedReminderIDs.contains(reminder.id)
                         ) {
                             toggleSelection(for: reminder)
+                        } onEdit: {
+                            editingReminder = reminder
+                        } onDelete: {
+                            deleteReminder(reminder)
                         }
                     }
-                    .onDelete { offsets in delete(from: completedReminders, at: offsets) }
                 } header: {
                     Text("TERMINÉS")
                         .font(.caption2.weight(.semibold))
@@ -162,9 +217,8 @@ struct ContentView: View {
 
     // MARK: – Actions
 
-    private func delete(from list: [Reminder], at offsets: IndexSet) {
-        for index in offsets {
-            let reminder = list[index]
+    private func deleteReminder(_ reminder: Reminder) {
+        withAnimation(.easeInOut(duration: 0.2)) {
             NotificationManager.shared.cancelReminder(reminder)
             modelContext.delete(reminder)
         }
@@ -178,6 +232,48 @@ struct ContentView: View {
         }
     }
 
+    private func toggleSelectAll() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if areAllRemindersSelected {
+                selectedReminderIDs.removeAll()
+            } else {
+                selectedReminderIDs = allReminderIDs
+            }
+        }
+    }
+
+    private func performPrimarySelectionAction() {
+        if shouldShowMarkAsNotCompleted {
+            markSelectedAsNotCompleted()
+        } else {
+            completeSelected()
+        }
+    }
+
+    private func applyEdit(
+        for reminder: Reminder,
+        title: String,
+        startDate: Date,
+        intervalMinutes: Int,
+        maxRepetitions: Int
+    ) {
+        reminder.title = title
+        reminder.startDate = startDate
+        reminder.intervalMinutes = intervalMinutes
+        reminder.maxRepetitions = maxRepetitions
+
+        NotificationManager.shared.cancelReminder(reminder)
+        if !reminder.isCompleted {
+            NotificationManager.shared.scheduleReminder(reminder)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save reminder edit error: \(error)")
+        }
+    }
+
     private func completeSelected() {
         withAnimation(.easeInOut(duration: 0.3)) {
             for reminder in reminders where selectedReminderIDs.contains(reminder.id) {
@@ -185,8 +281,24 @@ struct ContentView: View {
                 NotificationManager.shared.cancelReminder(reminder)
             }
         }
-        selectedReminderIDs.removeAll()
-        isSelectionMode = false
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedReminderIDs.removeAll()
+            isSelectionMode = false
+        }
+    }
+
+    private func markSelectedAsNotCompleted() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            for reminder in reminders where selectedReminderIDs.contains(reminder.id) {
+                reminder.isCompleted = false
+                NotificationManager.shared.cancelReminder(reminder)
+                NotificationManager.shared.scheduleReminder(reminder)
+            }
+        }
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedReminderIDs.removeAll()
+            isSelectionMode = false
+        }
     }
 
     private func deleteSelected() {
@@ -196,8 +308,10 @@ struct ContentView: View {
                 modelContext.delete(reminder)
             }
         }
-        selectedReminderIDs.removeAll()
-        isSelectionMode = false
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedReminderIDs.removeAll()
+            isSelectionMode = false
+        }
     }
 }
 
@@ -208,6 +322,8 @@ struct ReminderRow: View {
     let isSelectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -269,6 +385,23 @@ struct ReminderRow: View {
                 .tint(.white)
             }
         }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !isSelectionMode {
+                Button {
+                    onDelete()
+                } label: {
+                    Label("Supprimer", systemImage: "trash")
+                }
+                .tint(.red)
+
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Modifier", systemImage: "pencil")
+                }
+                .tint(.gray)
+            }
+        }
     }
 }
 
@@ -279,6 +412,8 @@ struct CompletedReminderRow: View {
     let isSelectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         HStack {
@@ -318,6 +453,91 @@ struct CompletedReminderRow: View {
         .onTapGesture {
             if isSelectionMode {
                 onToggleSelection()
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if !isSelectionMode {
+                Button {
+                    onDelete()
+                } label: {
+                    Label("Supprimer", systemImage: "trash")
+                }
+                .tint(.red)
+
+                Button {
+                    onEdit()
+                } label: {
+                    Label("Modifier", systemImage: "pencil")
+                }
+                .tint(.gray)
+            }
+        }
+    }
+}
+
+private struct EditReminderSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let reminder: Reminder
+    let onSave: (String, Date, Int, Int) -> Void
+
+    @State private var title: String
+    @State private var startDate: Date
+    @State private var intervalMinutes: Int
+    @State private var maxRepetitions: Int
+
+    init(
+        reminder: Reminder,
+        onSave: @escaping (String, Date, Int, Int) -> Void
+    ) {
+        self.reminder = reminder
+        self.onSave = onSave
+        _title = State(initialValue: reminder.title)
+        _startDate = State(initialValue: reminder.startDate)
+        _intervalMinutes = State(initialValue: reminder.intervalMinutes)
+        _maxRepetitions = State(initialValue: reminder.maxRepetitions)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Rappel") {
+                    TextField("Titre", text: $title)
+                        .textInputAutocapitalization(.sentences)
+                    DatePicker(
+                        "Date et heure",
+                        selection: $startDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                }
+
+                Section("Répétition") {
+                    Stepper(
+                        "Intervalle : **\(intervalMinutes) min**",
+                        value: $intervalMinutes,
+                        in: 1...60
+                    )
+                    Stepper(
+                        "Max répétitions : **\(maxRepetitions)**",
+                        value: $maxRepetitions,
+                        in: 1...48
+                    )
+                }
+            }
+            .navigationTitle("Modifier")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Enregistrer") {
+                        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+                        onSave(trimmedTitle, startDate, intervalMinutes, maxRepetitions)
+                        dismiss()
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
             }
         }
     }

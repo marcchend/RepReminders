@@ -31,17 +31,21 @@ struct WatchContentView: View {
                     }
                 }
             }
-            .navigationTitle("Rappels")
             .listStyle(.carousel)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(isSelectionMode ? "Annuler" : "Sélect.") {
+                    Button {
                         withAnimation(.spring(response: 0.48, dampingFraction: 0.9)) {
                             isSelectionMode.toggle()
+                            if !isSelectionMode {
+                                selectedReminderIDs.removeAll()
+                            }
                         }
-                        if !isSelectionMode {
-                            selectedReminderIDs.removeAll()
-                        }
+                    } label: {
+                        Text(isSelectionMode ? "Annuler" : "Sélect.")
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut(duration: 0.18), value: isSelectionMode)
+                            .frame(minWidth: 64, alignment: .trailing)
                     }
                 }
             }
@@ -74,7 +78,6 @@ struct WatchContentView: View {
                 .animation(.easeInOut(duration: 0.26), value: isSelectionMode)
             }
         }
-        .animation(.spring(response: 0.48, dampingFraction: 0.9), value: isSelectionMode)
         .task {
             _ = await NotificationManager.shared.requestAuthorization()
             NotificationManager.shared.setupCategories()
@@ -91,9 +94,10 @@ struct WatchContentView: View {
                 WatchSyncManager.shared.sendComplete(reminderID: reminder.id)
             }
         }
-
-        selectedReminderIDs.removeAll()
-        isSelectionMode = false
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedReminderIDs.removeAll()
+            isSelectionMode = false
+        }
     }
 
     private func deleteSelected() {
@@ -104,9 +108,10 @@ struct WatchContentView: View {
                 WatchSyncManager.shared.sendDelete(reminderID: reminder.id)
             }
         }
-
-        selectedReminderIDs.removeAll()
-        isSelectionMode = false
+        withAnimation(.easeInOut(duration: 0.22)) {
+            selectedReminderIDs.removeAll()
+            isSelectionMode = false
+        }
     }
 
     private func toggleSelection(for reminder: Reminder) {
