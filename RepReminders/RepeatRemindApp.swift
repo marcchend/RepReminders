@@ -1,0 +1,211 @@
+import SwiftUI
+import SwiftData
+import UserNotifications
+#if canImport(WatchConnectivity)
+import WatchConnectivity
+#endif
+
+@main
+struct RepeatRemindApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    var sharedModelContainer: ModelContainer = {
+        do {
+            return try makeSharedContainer()
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        .modelContainer(sharedModelContainer)
+    }
+}
+
+// MARK: – App Delegate (notification handling)
+
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = self
+        NotificationManager.shared.setupCategories()
+
+        // ⚠️ Indispensable : enregistre les App Shortcuts auprès du système
+        // Sans cela, les actions n'apparaissent pas dans l'app Raccourcis.
+        #if !os(watchOS)
+        RepeatRemindShortcuts.updateAppShortcutParameters()
+        #endif
+
+        PhoneWatchSyncManager.shared.activate()
+
+        return true
+    }
+
+    // Handle tapping the "Valider ma présence" action button in a notification
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+
+        guard response.actionIdentifier == "VALIDATE_ACTION",
+              let reminderIDString = response.notification.request.content
+                  .userInfo["reminderID"] as? String
+        else { return }
+
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let all = try context.fetch(FetchDescriptor<Reminder>())
+                if let reminder = all.first(where: { $0.id.uuidString == reminderIDString }) {
+                    reminder.isCompleted = true
+                    NotificationManager.shared.cancelReminder(reminder)
+                    try context.save()
+                    PhoneWatchSyncManager.shared.sendCurrentState()
+                }
+            } catch {
+                print("⚠️ Error completing reminder from notification: \(error)")
+            }
+        }
+    }
+
+    // Display notifications while the app is in the foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
+    }
+}
+
+// MARK: - iPhone <-> Watch sync (no CloudKit)
+
+final class PhoneWatchSyncManager: NSObject {
+    static let shared = PhoneWatchSyncManager()
+
+    private override init() {}
+
+    func activate() {
+        #if canImport(WatchConnectivity)
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        session.delegate = self
+        session.activate()
+        #endif
+    }
+
+    func pushSnapshot(reminders: [Reminder]) {
+        #if canImport(WatchConnectivity)
+        guard WCSession.isSupported() else { return }
+
+        let payload = reminders.map { reminder in
+            [
+                "id": reminder.id.uuidString,
+                "title": reminder.title,
+                "intervalMinutes": reminder.intervalMinutes,
+                "startDate": reminder.startDate.timeIntervalSince1970,
+                "maxRepetitions": reminder.maxRepetitions,
+                "isCompleted": reminder.isCompleted,
+                "createdAt": reminder.createdAt.timeIntervalSince1970
+            ] as [String: Any]
+        }
+
+        do {
+            try WCSession.default.updateApplicationContext(["reminders": payload])
+        } catch {
+            print("⚠️ Could not update watch context: \(error)")
+        }
+        #endif
+    }
+
+    func sendCurrentState() {
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let reminders = try context.fetch(FetchDescriptor<Reminder>())
+                pushSnapshot(reminders: reminders)
+            } catch {
+                print("⚠️ Could not fetch reminders for sync: \(error)")
+            }
+        }
+    }
+}
+
+#if canImport(WatchConnectivity)
+extension PhoneWatchSyncManager: WCSessionDelegate {
+    func session(
+        _ session: WCSession,
+        activationDidCompleteWith activationState: WCSessionActivationState,
+        error: Error?
+    ) {
+        if let error {
+            print("⚠️ WCSession activation error: \(error)")
+            return
+        }
+        sendCurrentState()
+    }
+
+    func sessionDidBecomeInactive(_ session: WCSession) {}
+
+    func sessionDidDeactivate(_ session: WCSession) {
+        WCSession.default.activate()
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        handleIncomingWatchMessage(message)
+    }
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        handleIncomingWatchMessage(userInfo)
+    }
+
+    private func handleIncomingWatchMessage(_ message: [String: Any]) {
+        guard let type = message["type"] as? String else { return }
+
+        if type == "requestSync" {
+            sendCurrentState()
+            return
+        }
+
+        guard let reminderID = message["id"] as? String,
+              let uuid = UUID(uuidString: reminderID)
+        else { return }
+
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let allReminders = try context.fetch(FetchDescriptor<Reminder>())
+                guard let reminder = allReminders.first(where: { $0.id == uuid }) else { return }
+
+                switch type {
+                case "complete":
+                    reminder.isCompleted = true
+                    NotificationManager.shared.cancelReminder(reminder)
+                case "delete":
+                    NotificationManager.shared.cancelReminder(reminder)
+                    context.delete(reminder)
+                default:
+                    return
+                }
+
+                try context.save()
+                sendCurrentState()
+            } catch {
+                print("⚠️ Could not apply watch action: \(error)")
+            }
+        }
+    }
+}
+#endif

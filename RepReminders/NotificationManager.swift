@@ -48,9 +48,8 @@ final class NotificationManager: NSObject {
 
             let content = UNMutableNotificationContent()
             content.title = reminder.title
-            content.body = i == 0
-                ? "N'oublie pas de valider ta présence !"
-                : "Rappel \(i + 1) — As-tu validé ta présence ?"
+            content.subtitle = fireDate.formatted(date: .omitted, time: .shortened)
+            content.body = ""
             content.sound = .default
             content.categoryIdentifier = "REMINDER_CATEGORY"
             content.userInfo = ["reminderID": reminder.id.uuidString]
@@ -85,5 +84,37 @@ final class NotificationManager: NSObject {
             .map { "\(reminder.id.uuidString)-\($0)" }
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
         center.removeDeliveredNotifications(withIdentifiers: identifiers)
+    }
+
+    // Remove notifications that no longer map to existing reminders.
+    func removeOrphanedNotifications(validReminderIDs: Set<UUID>) async {
+        let center = UNUserNotificationCenter.current()
+        let pending = await center.pendingNotificationRequests()
+
+        var orphanIdentifiers: [String] = []
+
+        for request in pending {
+            let content = request.content
+
+            if content.categoryIdentifier != "REMINDER_CATEGORY" {
+                continue
+            }
+
+            guard let reminderIDString = content.userInfo["reminderID"] as? String,
+                  let reminderID = UUID(uuidString: reminderIDString)
+            else {
+                orphanIdentifiers.append(request.identifier)
+                continue
+            }
+
+            if !validReminderIDs.contains(reminderID) {
+                orphanIdentifiers.append(request.identifier)
+            }
+        }
+
+        if !orphanIdentifiers.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: orphanIdentifiers)
+            center.removeDeliveredNotifications(withIdentifiers: orphanIdentifiers)
+        }
     }
 }

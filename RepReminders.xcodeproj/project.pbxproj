@@ -14,12 +14,11 @@
 		AA000027AA000027AA000027 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020AA000020AA000020 /* NotificationManager.swift */; };
 		AA000028AA000028AA000028 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021AA000021AA000021 /* AppIntents.swift */; };
 		AA000029AA000029AA000029 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000022AA000022AA000022 /* Assets.xcassets */; };
-		BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DD000001DD000001DD000001 /* RepeatRemindWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BB000001BB000001BB000001 /* RepeatRemindWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DD000001DD000001DD000001 /* RepeatRemindWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CC000001CC000001CC000001 /* RepeatRemindWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000002DD000002DD000002 /* RepeatRemindWatchApp.swift */; };
 		CC000002CC000002CC000002 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD000003DD000003DD000003 /* WatchContentView.swift */; };
 		CC000003CC000003CC000003 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000019AA000019AA000019 /* Reminder.swift */; };
 		CC000004CC000004CC000004 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000020AA000020AA000020 /* NotificationManager.swift */; };
-		CC000005CC000005CC000005 /* AppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000021AA000021AA000021 /* AppIntents.swift */; };
 		CC000006CC000006CC000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD000004DD000004DD000004 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -240,7 +239,6 @@
 				CC000002CC000002CC000002 /* WatchContentView.swift in Sources */,
 				CC000003CC000003CC000003 /* Reminder.swift in Sources */,
 				CC000004CC000004CC000004 /* NotificationManager.swift in Sources */,
-				CC000005CC000005CC000005 /* AppIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -387,6 +385,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -416,6 +415,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -444,6 +444,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;
@@ -470,6 +471,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = RepReminders;
 				INFOPLIST_KEY_NSUserNotificationsUsageDescription = "RepeatRemind utilise les notifications pour vous rappeler de valider votre presence.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.repeatremind.app;
 				INFOPLIST_KEY_WKWatchKitApp = YES;

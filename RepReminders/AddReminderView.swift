@@ -5,10 +5,10 @@ struct AddReminderView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title = "Valider ma présence"
+    @State private var title = ""
     @State private var startDate = Date()
     @State private var intervalMinutes = 5
-    @State private var maxRepetitions = 20
+    @State private var maxRepetitions = 18
 
     private var totalCoverageMinutes: Int { intervalMinutes * maxRepetitions }
     private var totalCoverageFormatted: String {
@@ -24,6 +24,7 @@ struct AddReminderView: View {
             Form {
                 Section("Rappel") {
                     TextField("Titre", text: $title)
+                        .textInputAutocapitalization(.sentences)
                     DatePicker(
                         "Date et heure",
                         selection: $startDate,
@@ -47,19 +48,23 @@ struct AddReminderView: View {
                 } footer: {
                     HStack(spacing: 6) {
                         Image(systemName: "clock.badge.checkmark")
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(.secondary)
                         Text("Couverture totale : \(totalCoverageFormatted)")
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
             .navigationTitle("Nouveau rappel")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Annuler") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Créer") { createReminder() }
+                        .fontWeight(.semibold)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }

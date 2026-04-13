@@ -5,7 +5,7 @@ import Foundation
 // MARK: - SwiftData helper
 
 private func makeContainer() throws -> ModelContainer {
-    try ModelContainer(for: Reminder.self)
+    try makeSharedContainer()
 }
 
 // MARK: – Créer un rappel

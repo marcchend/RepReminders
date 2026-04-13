@@ -15,9 +15,6 @@ settings:
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
 
-# ─────────────────────────────────────────────
-# iOS + iPadOS + macOS (Catalyst) target
-# ─────────────────────────────────────────────
 targets:
   RepeatRemind:
     type: application
@@ -34,9 +31,8 @@ targets:
         DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: "YES"
 
     info:
-      path: iOS/Info.plist
       properties:
-        CFBundleDisplayName: RepeatRemind
+        CFBundleDisplayName: RepReminders
         NSUserNotificationsUsageDescription: "RepeatRemind utilise les notifications pour vous rappeler de valider votre présence."
         UILaunchScreen:
           UIColorName: ""
@@ -51,12 +47,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
 
     sources:
-      - path: Shared
-      - path: iOS
+      - path: RepeatRemind
 
-# ─────────────────────────────────────────────
-# watchOS (standalone) target
-# ─────────────────────────────────────────────
   RepeatRemindWatch:
     type: application
     platform: watchOS
@@ -68,12 +60,12 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
     info:
-      path: watchOS/Info.plist
       properties:
-        CFBundleDisplayName: RepeatRemind
+        CFBundleDisplayName: RepReminders
         WKWatchKitApp: true
         NSUserNotificationsUsageDescription: "RepeatRemind utilise les notifications pour vous rappeler de valider votre présence."
 
     sources:
-      - path: Shared
-      - path: watchOS
+      - path: RepeatRemindWatch
+      - path: RepeatRemind/Reminder.swift
+      - path: RepeatRemind/NotificationManager.swift

@@ -1,6 +1,12 @@
 import SwiftData
 import Foundation
 
+func makeSharedContainer(inMemory: Bool = false) throws -> ModelContainer {
+    let schema = Schema([Reminder.self])
+    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
+    return try ModelContainer(for: schema, configurations: [config])
+}
+
 @Model
 final class Reminder {
     var id: UUID
