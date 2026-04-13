@@ -15,7 +15,7 @@ final class Reminder {
         title: String,
         intervalMinutes: Int,
         startDate: Date,
-        maxRepetitions: Int = 20
+        maxRepetitions: Int = 18
     ) {
         self.id = UUID()
         self.title = title
