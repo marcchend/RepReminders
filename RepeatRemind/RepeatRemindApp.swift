@@ -35,6 +35,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         NotificationManager.shared.setupCategories()
+
+        // ⚠️ Indispensable : enregistre les App Shortcuts auprès du système
+        // Sans cela, les actions n'apparaissent pas dans l'app Raccourcis.
+        #if !os(watchOS)
+        RepeatRemindShortcuts.updateAppShortcutParameters()
+        #endif
+
         return true
     }
 
