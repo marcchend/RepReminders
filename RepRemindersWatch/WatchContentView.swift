@@ -3,14 +3,11 @@ import SwiftData
 import WatchConnectivity
 
 struct WatchContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(
         filter: #Predicate<Reminder> { !$0.isCompleted },
         sort: \Reminder.startDate
     )
     private var activeReminders: [Reminder]
-    @State private var isSelectionMode = false
-    @State private var selectedReminderIDs: Set<UUID> = []
 
     var body: some View {
         NavigationStack {
@@ -21,104 +18,18 @@ struct WatchContentView: View {
                         .font(.footnote)
                 } else {
                     ForEach(activeReminders) { reminder in
-                        WatchReminderRow(
-                            reminder: reminder,
-                            isSelectionMode: isSelectionMode,
-                            isSelected: selectedReminderIDs.contains(reminder.id)
-                        ) {
-                            toggleSelection(for: reminder)
-                        }
+                        WatchReminderRow(reminder: reminder)
                     }
                 }
             }
             .listStyle(.carousel)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation(.spring(response: 0.48, dampingFraction: 0.9)) {
-                            isSelectionMode.toggle()
-                            if !isSelectionMode {
-                                selectedReminderIDs.removeAll()
-                            }
-                        }
-                    } label: {
-                        Text(isSelectionMode ? "Annuler" : "Sélect.")
-                            .contentTransition(.opacity)
-                            .animation(.easeInOut(duration: 0.18), value: isSelectionMode)
-                            .frame(minWidth: 64, alignment: .trailing)
-                    }
-                }
-            }
         }
         .tint(.primary)
-        .safeAreaInset(edge: .bottom) {
-            if isSelectionMode {
-                HStack(spacing: 8) {
-                    Button("Terminer") {
-                        completeSelected()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(isSelectionMode ? .white : .secondary)
-                    .disabled(selectedReminderIDs.isEmpty)
-
-                    Button("Supprimer") {
-                        deleteSelected()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(isSelectionMode ? .white : .secondary)
-                    .disabled(selectedReminderIDs.isEmpty)
-                }
-                .padding(.vertical, 4)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .move(edge: .bottom).combined(with: .opacity)
-                    )
-                )
-                .animation(.easeInOut(duration: 0.26), value: isSelectionMode)
-            }
-        }
         .task {
             _ = await NotificationManager.shared.requestAuthorization()
             NotificationManager.shared.setupCategories()
             WatchSyncManager.shared.activate()
             WatchSyncManager.shared.requestSyncIfPossible()
-        }
-    }
-
-    private func completeSelected() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            for reminder in activeReminders where selectedReminderIDs.contains(reminder.id) {
-                reminder.isCompleted = true
-                NotificationManager.shared.cancelReminder(reminder)
-                WatchSyncManager.shared.sendComplete(reminderID: reminder.id)
-            }
-        }
-        withAnimation(.easeInOut(duration: 0.22)) {
-            selectedReminderIDs.removeAll()
-            isSelectionMode = false
-        }
-    }
-
-    private func deleteSelected() {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            for reminder in activeReminders where selectedReminderIDs.contains(reminder.id) {
-                NotificationManager.shared.cancelReminder(reminder)
-                modelContext.delete(reminder)
-                WatchSyncManager.shared.sendDelete(reminderID: reminder.id)
-            }
-        }
-        withAnimation(.easeInOut(duration: 0.22)) {
-            selectedReminderIDs.removeAll()
-            isSelectionMode = false
-        }
-    }
-
-    private func toggleSelection(for reminder: Reminder) {
-        if selectedReminderIDs.contains(reminder.id) {
-            selectedReminderIDs.remove(reminder.id)
-        } else {
-            selectedReminderIDs.insert(reminder.id)
         }
     }
 }
@@ -127,9 +38,6 @@ struct WatchContentView: View {
 
 struct WatchReminderRow: View {
     let reminder: Reminder
-    let isSelectionMode: Bool
-    let isSelected: Bool
-    let onToggleSelection: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -146,22 +54,19 @@ struct WatchReminderRow: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
-            if !isSelectionMode {
-                Button {
-                    withAnimation {
-                        reminder.isCompleted = true
-                        NotificationManager.shared.cancelReminder(reminder)
-                        WatchSyncManager.shared.sendComplete(reminderID: reminder.id)
-                    }
-                } label: {
-                    Label("Validé !", systemImage: "checkmark")
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
+            Button {
+                withAnimation {
+                    reminder.isCompleted = true
+                    NotificationManager.shared.cancelReminder(reminder)
+                    WatchSyncManager.shared.sendComplete(reminderID: reminder.id)
                 }
-                .tint(.white)
-                .buttonStyle(.bordered)
-                .padding(.top, 2)
+            } label: {
+                Label("Terminer", systemImage: "checkmark")
+                    .font(.caption2)
             }
+            .tint(.white)
+            .buttonStyle(.bordered)
+            .padding(.top, 2)
         }
         .padding(.vertical, 2)
         .padding(6)
@@ -172,17 +77,10 @@ struct WatchReminderRow: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.white, lineWidth: 2)
-                .opacity(isSelectionMode && isSelected ? 1 : 0)
-                .scaleEffect(isSelectionMode && isSelected ? 1 : 0.985)
+                .opacity(0)
+                .scaleEffect(0.985)
         )
         .contentShape(Rectangle())
-        .animation(.easeInOut(duration: 0.22), value: isSelectionMode)
-        .animation(.easeInOut(duration: 0.22), value: isSelected)
-        .onTapGesture {
-            if isSelectionMode {
-                onToggleSelection()
-            }
-        }
     }
 }
 
@@ -244,6 +142,29 @@ final class WatchSyncManager: NSObject {
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { error in
                 print("⚠️ Could not send delete action: \(error)")
+            }
+        } else {
+            session.transferUserInfo(payload)
+        }
+    }
+
+    func sendCreate(reminder: Reminder) {
+        guard WCSession.isSupported() else { return }
+        let payload: [String: Any] = [
+            "type": "create",
+            "id": reminder.id.uuidString,
+            "title": reminder.title,
+            "intervalMinutes": reminder.intervalMinutes,
+            "startDate": reminder.startDate.timeIntervalSince1970,
+            "maxRepetitions": reminder.maxRepetitions,
+            "isCompleted": reminder.isCompleted,
+            "createdAt": reminder.createdAt.timeIntervalSince1970
+        ]
+        let session = WCSession.default
+
+        if session.isReachable {
+            session.sendMessage(payload, replyHandler: nil) { error in
+                print("⚠️ Could not send create action: \(error)")
             }
         } else {
             session.transferUserInfo(payload)
@@ -325,9 +246,23 @@ extension WatchSyncManager: WCSessionDelegate {
                 }
 
                 try context.save()
+
+                let syncedReminders = try context.fetch(FetchDescriptor<Reminder>())
+                for reminder in syncedReminders {
+                    NotificationManager.shared.cancelReminder(reminder)
+                    if !reminder.isCompleted {
+                        NotificationManager.shared.scheduleReminder(reminder)
+                    }
+                }
+                Task {
+                    await NotificationManager.shared.removeOrphanedNotifications(
+                        validReminderIDs: Set(syncedReminders.map(\.id))
+                    )
+                }
             } catch {
                 print("⚠️ Could not apply iPhone snapshot on watch: \(error)")
             }
         }
     }
 }
+

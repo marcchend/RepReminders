@@ -178,6 +178,52 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
             return
         }
 
+        if type == "create" {
+            Task { @MainActor in
+                do {
+                    guard let reminderID = message["id"] as? String,
+                          let uuid = UUID(uuidString: reminderID),
+                          let title = message["title"] as? String,
+                          let intervalMinutes = message["intervalMinutes"] as? Int,
+                          let startTimestamp = message["startDate"] as? TimeInterval,
+                          let maxRepetitions = message["maxRepetitions"] as? Int,
+                          let isCompleted = message["isCompleted"] as? Bool,
+                          let createdAtTimestamp = message["createdAt"] as? TimeInterval
+                    else { return }
+
+                    let container = try makeSharedContainer()
+                    let context = container.mainContext
+                    let allReminders = try context.fetch(FetchDescriptor<Reminder>())
+
+                    if allReminders.contains(where: { $0.id == uuid }) {
+                        sendCurrentState()
+                        return
+                    }
+
+                    let reminder = Reminder(
+                        title: title,
+                        intervalMinutes: intervalMinutes,
+                        startDate: Date(timeIntervalSince1970: startTimestamp),
+                        maxRepetitions: maxRepetitions
+                    )
+                    reminder.id = uuid
+                    reminder.isCompleted = isCompleted
+                    reminder.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+                    context.insert(reminder)
+
+                    if !isCompleted {
+                        NotificationManager.shared.scheduleReminder(reminder)
+                    }
+
+                    try context.save()
+                    sendCurrentState()
+                } catch {
+                    print("⚠️ Could not create reminder from watch: \(error)")
+                }
+            }
+            return
+        }
+
         guard let reminderID = message["id"] as? String,
               let uuid = UUID(uuidString: reminderID)
         else { return }

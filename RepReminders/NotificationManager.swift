@@ -22,7 +22,7 @@ final class NotificationManager: NSObject {
     func setupCategories() {
         let validateAction = UNNotificationAction(
             identifier: "VALIDATE_ACTION",
-            title: "✓ Valider ma présence",
+            title: "✓ Terminer",
             options: [.foreground]
         )
         let category = UNNotificationCategory(
