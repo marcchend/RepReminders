@@ -100,6 +100,7 @@ private extension Date {
 
 final class WatchSyncManager: NSObject {
     static let shared = WatchSyncManager()
+    private var pendingLocalCompletions: Set<UUID> = []
 
     private override init() {}
 
@@ -153,12 +154,12 @@ final class WatchSyncManager: NSObject {
 
     func completeReminder(reminderID: UUID) {
         Task { @MainActor in
-            completeReminderNow(reminderID: reminderID)
+            await completeReminderNow(reminderID: reminderID)
         }
     }
 
     @MainActor
-    func completeReminderNow(reminderID: UUID) {
+    func completeReminderNow(reminderID: UUID) async {
         do {
             let container = try makeSharedContainer()
             let context = container.mainContext
@@ -166,11 +167,12 @@ final class WatchSyncManager: NSObject {
 
             guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
 
+            // Mark as pending to avoid stale iPhone snapshots from reopening it.
+            pendingLocalCompletions.insert(reminderID)
             reminder.isCompleted = true
-            NotificationManager.shared.cancelReminder(reminder)
+            await NotificationManager.shared.cancelReminderAndWait(reminder)
             try context.save()
             sendComplete(reminderID: reminder.id)
-            requestSyncIfPossible()
         } catch {
             print("⚠️ Could not complete reminder on watch: \(error)")
         }
@@ -248,6 +250,16 @@ extension WatchSyncManager: WCSessionDelegate {
 
                     incomingIDs.insert(id)
 
+                    // If watch just completed this reminder locally, ignore stale "active" snapshots
+                    // until iPhone confirms completion.
+                    if pendingLocalCompletions.contains(id) && !isCompleted {
+                        continue
+                    }
+
+                    if pendingLocalCompletions.contains(id) && isCompleted {
+                        pendingLocalCompletions.remove(id)
+                    }
+
                     if let current = existingByID[id] {
                         current.title = title
                         current.intervalMinutes = intervalMinutes
@@ -277,7 +289,7 @@ extension WatchSyncManager: WCSessionDelegate {
 
                 let syncedReminders = try context.fetch(FetchDescriptor<Reminder>())
                 for reminder in syncedReminders {
-                    NotificationManager.shared.cancelReminder(reminder)
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
                     if !reminder.isCompleted {
                         NotificationManager.shared.scheduleReminder(reminder)
                     }

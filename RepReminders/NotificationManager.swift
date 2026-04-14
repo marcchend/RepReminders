@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import UserNotifications
 
 final class NotificationManager: NSObject {
@@ -21,15 +22,15 @@ final class NotificationManager: NSObject {
     // MARK: – Categories (action buttons on notifications)
 
     func setupCategories() {
-        let openAction = UNNotificationAction(
-            identifier: "OPEN_APP_ACTION",
-            title: "Ouvrir",
-            options: [.foreground]
+        let completeAction = UNNotificationAction(
+            identifier: "VALIDATE_ACTION",
+            title: "✓ Terminer",
+            options: []
         )
 
         let category = UNNotificationCategory(
             identifier: "REMINDER_CATEGORY",
-            actions: [openAction],
+            actions: [completeAction],
             intentIdentifiers: [],
             options: [.customDismissAction]
         )
@@ -167,6 +168,30 @@ final class NotificationManager: NSObject {
     func cancelReminder(_ reminder: Reminder) {
         Task {
             await removeNotifications(for: reminder)
+        }
+    }
+
+    func cancelReminderAndWait(_ reminder: Reminder) async {
+        await removeNotifications(for: reminder)
+    }
+
+    @MainActor
+    func completeReminderIfExists(reminderIDString: String) async {
+        do {
+            let container = try makeSharedContainer()
+            let context = container.mainContext
+            let all = try context.fetch(FetchDescriptor<Reminder>())
+
+            guard let reminder = all.first(where: { $0.id.uuidString == reminderIDString }) else { return }
+
+            reminder.isCompleted = true
+            await cancelReminderAndWait(reminder)
+            try context.save()
+            #if !os(watchOS)
+            PhoneWatchSyncManager.shared.sendCurrentState()
+            #endif
+        } catch {
+            print("⚠️ Could not complete reminder from notification: \(error)")
         }
     }
 

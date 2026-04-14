@@ -97,7 +97,7 @@ struct DeleteReminderIntent: AppIntent {
         }
 
         for reminder in matching {
-            NotificationManager.shared.cancelReminder(reminder)
+            await NotificationManager.shared.cancelReminderAndWait(reminder)
             context.delete(reminder)
         }
         try context.save()
@@ -147,7 +147,7 @@ struct CompleteReminderIntent: AppIntent {
 
         for reminder in matching {
             reminder.isCompleted = true
-            NotificationManager.shared.cancelReminder(reminder)
+            await NotificationManager.shared.cancelReminderAndWait(reminder)
         }
         try context.save()
         Task {

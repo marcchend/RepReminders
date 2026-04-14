@@ -52,13 +52,23 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
-    // The notification action now only opens the app.
+    // Handle notification action from iPhone notifications.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        completionHandler()
+        guard response.actionIdentifier == "VALIDATE_ACTION",
+              let reminderIDString = response.notification.request.content.userInfo["reminderID"] as? String
+        else {
+            completionHandler()
+            return
+        }
+
+        Task { @MainActor in
+            await NotificationManager.shared.completeReminderIfExists(reminderIDString: reminderIDString)
+            completionHandler()
+        }
     }
 
     // Display notifications while the app is in the foreground
@@ -73,10 +83,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
 // MARK: - iPhone <-> Watch sync (no CloudKit)
 
-final class PhoneWatchSyncManager: NSObject {
+final class PhoneWatchSyncManager: NSObject, ObservableObject {
     static let shared = PhoneWatchSyncManager()
     private var isActivated = false
     private var pendingForcedSync = false
+
+    @MainActor @Published private(set) var isWatchPaired = false
+    @MainActor @Published private(set) var isWatchAppInstalled = false
 
     private override init() {}
 
@@ -86,13 +99,18 @@ final class PhoneWatchSyncManager: NSObject {
         let session = WCSession.default
         session.delegate = self
         session.activate()
+        updateWatchAvailability(from: session)
         #endif
     }
 
     func forceSyncSnapshot() {
         #if canImport(WatchConnectivity)
-        guard canSyncToWatch() else {
-            pendingForcedSync = false
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        updateWatchAvailability(from: session)
+
+        guard canSyncToWatch(session: session) else {
+            pendingForcedSync = true
             return
         }
         pendingForcedSync = true
@@ -107,7 +125,10 @@ final class PhoneWatchSyncManager: NSObject {
 
     func pushSnapshot(reminders: [Reminder]) {
         #if canImport(WatchConnectivity)
-        guard canSyncToWatch() else {
+        let session = WCSession.default
+        updateWatchAvailability(from: session)
+
+        guard canSyncToWatch(session: session) else {
             print("ℹ️ Watch app not installed yet, skipping sync snapshot.")
             return
         }
@@ -146,10 +167,15 @@ final class PhoneWatchSyncManager: NSObject {
     }
 
     #if canImport(WatchConnectivity)
-    private func canSyncToWatch() -> Bool {
-        guard WCSession.isSupported() else { return false }
-        let session = WCSession.default
+    private func canSyncToWatch(session: WCSession = .default) -> Bool {
         return session.isPaired && session.isWatchAppInstalled
+    }
+
+    private func updateWatchAvailability(from session: WCSession = .default) {
+        Task { @MainActor in
+            isWatchPaired = session.isPaired
+            isWatchAppInstalled = session.isWatchAppInstalled
+        }
     }
     #endif
 
@@ -161,7 +187,7 @@ final class PhoneWatchSyncManager: NSObject {
                 let reminders = try context.fetch(FetchDescriptor<Reminder>())
 
                 for reminder in reminders {
-                    NotificationManager.shared.cancelReminder(reminder)
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
                     context.delete(reminder)
                 }
 
@@ -199,6 +225,15 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
 
     func sessionDidDeactivate(_ session: WCSession) {
         WCSession.default.activate()
+    }
+
+    func sessionWatchStateDidChange(_ session: WCSession) {
+        updateWatchAvailability(from: session)
+
+        if pendingForcedSync, canSyncToWatch(session: session) {
+            pendingForcedSync = false
+            sendCurrentState()
+        }
     }
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
@@ -277,9 +312,9 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
                 switch type {
                 case "complete":
                     reminder.isCompleted = true
-                    NotificationManager.shared.cancelReminder(reminder)
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
                 case "delete":
-                    NotificationManager.shared.cancelReminder(reminder)
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
                     context.delete(reminder)
                 default:
                     return

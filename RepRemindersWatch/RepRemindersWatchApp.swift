@@ -34,10 +34,18 @@ final class WatchNotificationDelegate: NSObject, UNUserNotificationCenterDelegat
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if response.actionIdentifier == "OPEN_APP_ACTION" {
-            WatchSyncManager.shared.requestSyncIfPossible()
+        guard response.actionIdentifier == "VALIDATE_ACTION",
+              let reminderIDString = response.notification.request.content.userInfo["reminderID"] as? String,
+              let reminderID = UUID(uuidString: reminderIDString)
+        else {
+            completionHandler()
+            return
         }
-        completionHandler()
+
+        Task { @MainActor in
+            await WatchSyncManager.shared.completeReminderNow(reminderID: reminderID)
+            completionHandler()
+        }
     }
 
     func userNotificationCenter(
