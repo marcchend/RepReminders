@@ -23,7 +23,7 @@ final class NotificationManager: NSObject {
         let validateAction = UNNotificationAction(
             identifier: "VALIDATE_ACTION",
             title: "✓ Terminer",
-            options: [.foreground]
+            options: []
         )
         let category = UNNotificationCategory(
             identifier: "REMINDER_CATEGORY",

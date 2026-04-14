@@ -123,6 +123,23 @@ struct CompleteReminderIntent: AppIntent {
     }
 }
 
+// MARK: – Synchroniser la Watch
+
+struct SyncWatchIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "Synchroniser la Watch"
+    static var description = IntentDescription(
+        "Force l'envoi immédiat des rappels iPhone vers l'Apple Watch.",
+        categoryName: "RepReminders"
+    )
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        PhoneWatchSyncManager.shared.forceSyncSnapshot()
+        return .result(dialog: IntentDialog("Synchronisation Watch lancée."))
+    }
+}
+
 // MARK: – Entité Rappel
 //
 // Les @Property exposent les champs dans Raccourcis :
@@ -410,6 +427,15 @@ struct RepRemindersShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Valider un rappel",
             systemImageName: "checkmark.circle.fill"
+        )
+        AppShortcut(
+            intent: SyncWatchIntent(),
+            phrases: [
+                "Synchroniser la Watch avec \(.applicationName)",
+                "Forcer la synchronisation avec \(.applicationName)"
+            ],
+            shortTitle: "Synchroniser la Watch",
+            systemImageName: "applewatch"
         )
         AppShortcut(
             intent: GetRemindersIntent(),

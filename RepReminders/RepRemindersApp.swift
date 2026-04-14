@@ -92,6 +92,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
 final class PhoneWatchSyncManager: NSObject {
     static let shared = PhoneWatchSyncManager()
+    private var isActivated = false
+    private var pendingForcedSync = false
 
     private override init() {}
 
@@ -101,6 +103,19 @@ final class PhoneWatchSyncManager: NSObject {
         let session = WCSession.default
         session.delegate = self
         session.activate()
+        #endif
+    }
+
+    func forceSyncSnapshot() {
+        #if canImport(WatchConnectivity)
+        guard WCSession.isSupported() else { return }
+        pendingForcedSync = true
+        if !isActivated {
+            activate()
+            return
+        }
+        pendingForcedSync = false
+        sendCurrentState()
         #endif
     }
 
@@ -151,6 +166,12 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
     ) {
         if let error {
             print("⚠️ WCSession activation error: \(error)")
+            return
+        }
+        isActivated = true
+        if pendingForcedSync {
+            pendingForcedSync = false
+            sendCurrentState()
             return
         }
         sendCurrentState()

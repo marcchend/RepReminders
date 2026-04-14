@@ -55,11 +55,7 @@ struct WatchReminderRow: View {
                 .foregroundStyle(.secondary)
 
             Button {
-                withAnimation {
-                    reminder.isCompleted = true
-                    NotificationManager.shared.cancelReminder(reminder)
-                    WatchSyncManager.shared.sendComplete(reminderID: reminder.id)
-                }
+                WatchSyncManager.shared.completeReminder(reminderID: reminder.id)
             } label: {
                 Label("Terminer", systemImage: "checkmark")
                     .font(.caption2)
@@ -145,6 +141,25 @@ final class WatchSyncManager: NSObject {
             }
         } else {
             session.transferUserInfo(payload)
+        }
+    }
+
+    func completeReminder(reminderID: UUID) {
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let reminders = try context.fetch(FetchDescriptor<Reminder>())
+
+                guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
+
+                reminder.isCompleted = true
+                NotificationManager.shared.cancelReminder(reminder)
+                try context.save()
+                sendComplete(reminderID: reminder.id)
+            } catch {
+                print("⚠️ Could not complete reminder on watch: \(error)")
+            }
         }
     }
 
