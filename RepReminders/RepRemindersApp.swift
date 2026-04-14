@@ -43,6 +43,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         RepRemindersShortcuts.updateAppShortcutParameters()
         #endif
 
+        Task {
+            _ = await NotificationManager.shared.requestAuthorization()
+        }
+
         PhoneWatchSyncManager.shared.activate()
 
         return true

@@ -286,6 +286,7 @@ extension WatchSyncManager: WCSessionDelegate {
                     await NotificationManager.shared.removeOrphanedNotifications(
                         validReminderIDs: Set(syncedReminders.map(\.id))
                     )
+                    await NotificationManager.shared.verifyAndRepairNotifications(for: syncedReminders)
                 }
             } catch {
                 print("⚠️ Could not apply iPhone snapshot on watch: \(error)")

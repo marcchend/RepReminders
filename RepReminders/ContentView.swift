@@ -132,6 +132,7 @@ struct ContentView: View {
             await NotificationManager.shared.removeOrphanedNotifications(
                 validReminderIDs: Set(reminders.map(\.id))
             )
+            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
         .onAppear {
             PhoneWatchSyncManager.shared.pushSnapshot(reminders: reminders)
@@ -142,11 +143,15 @@ struct ContentView: View {
                 await NotificationManager.shared.removeOrphanedNotifications(
                     validReminderIDs: Set(reminders.map(\.id))
                 )
+                await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 PhoneWatchSyncManager.shared.forceSyncSnapshot()
+                Task {
+                    await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
+                }
             }
         }
     }
@@ -292,9 +297,17 @@ struct ContentView: View {
                 NotificationManager.shared.cancelReminder(reminder)
             }
         }
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save completion error: \(error)")
+        }
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
+        }
+        Task {
+            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
     }
 
@@ -306,9 +319,17 @@ struct ContentView: View {
                 NotificationManager.shared.scheduleReminder(reminder)
             }
         }
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save restore error: \(error)")
+        }
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
+        }
+        Task {
+            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
     }
 
@@ -319,9 +340,17 @@ struct ContentView: View {
                 modelContext.delete(reminder)
             }
         }
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save delete error: \(error)")
+        }
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
+        }
+        Task {
+            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
     }
 
@@ -330,6 +359,14 @@ struct ContentView: View {
             reminder.isCompleted = false
             NotificationManager.shared.cancelReminder(reminder)
             NotificationManager.shared.scheduleReminder(reminder)
+        }
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save single restore error: \(error)")
+        }
+        Task {
+            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
     }
 }

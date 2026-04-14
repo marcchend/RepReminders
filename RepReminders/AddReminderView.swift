@@ -63,7 +63,11 @@ struct AddReminderView: View {
                     Button("Annuler") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Créer") { createReminder() }
+                    Button("Créer") {
+                        Task {
+                            await createReminder()
+                        }
+                    }
                         .fontWeight(.semibold)
                         .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
@@ -71,7 +75,13 @@ struct AddReminderView: View {
         }
     }
 
-    private func createReminder() {
+    @MainActor
+    private func createReminder() async {
+        let granted = await NotificationManager.shared.requestAuthorization()
+        guard granted else {
+            return
+        }
+
         let reminder = Reminder(
             title: title.trimmingCharacters(in: .whitespaces),
             intervalMinutes: intervalMinutes,
@@ -79,7 +89,15 @@ struct AddReminderView: View {
             maxRepetitions: maxRepetitions
         )
         modelContext.insert(reminder)
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save new reminder error: \(error)")
+        }
         NotificationManager.shared.scheduleReminder(reminder)
+        Task {
+            await NotificationManager.shared.verifyAndRepairNotifications(for: [reminder])
+        }
         dismiss()
     }
 }
