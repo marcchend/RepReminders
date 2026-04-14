@@ -20,14 +20,14 @@ final class NotificationManager: NSObject {
     // MARK: – Categories (action buttons on notifications)
 
     func setupCategories() {
-        let validateAction = UNNotificationAction(
-            identifier: "VALIDATE_ACTION",
-            title: "✓ Terminer",
-            options: []
+        let openAction = UNNotificationAction(
+            identifier: "OPEN_APP_ACTION",
+            title: "Ouvrir",
+            options: [.foreground]
         )
         let category = UNNotificationCategory(
             identifier: "REMINDER_CATEGORY",
-            actions: [validateAction],
+            actions: [openAction],
             intentIdentifiers: [],
             options: [.customDismissAction]
         )
@@ -83,10 +83,45 @@ final class NotificationManager: NSObject {
 
     func cancelReminder(_ reminder: Reminder) {
         let center = UNUserNotificationCenter.current()
-        let identifiers = (0..<reminder.maxRepetitions)
-            .map { "\(reminder.id.uuidString)-\($0)" }
-        center.removePendingNotificationRequests(withIdentifiers: identifiers)
-        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        let reminderID = reminder.id.uuidString
+        let identifierPrefix = "\(reminderID)-"
+
+        // Remove any pending request that belongs to this reminder,
+        // even if maxRepetitions was changed after initial scheduling.
+        center.getPendingNotificationRequests { requests in
+            let identifiers = requests.compactMap { request in
+                if request.identifier.hasPrefix(identifierPrefix) {
+                    return request.identifier
+                }
+                if let userInfoID = request.content.userInfo["reminderID"] as? String,
+                   userInfoID == reminderID {
+                    return request.identifier
+                }
+                return nil
+            }
+
+            if !identifiers.isEmpty {
+                center.removePendingNotificationRequests(withIdentifiers: identifiers)
+            }
+        }
+
+        center.getDeliveredNotifications { notifications in
+            let identifiers = notifications.compactMap { notification in
+                let request = notification.request
+                if request.identifier.hasPrefix(identifierPrefix) {
+                    return request.identifier
+                }
+                if let userInfoID = request.content.userInfo["reminderID"] as? String,
+                   userInfoID == reminderID {
+                    return request.identifier
+                }
+                return nil
+            }
+
+            if !identifiers.isEmpty {
+                center.removeDeliveredNotifications(withIdentifiers: identifiers)
+            }
+        }
     }
 
     // Remove notifications that no longer map to existing reminders.

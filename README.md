@@ -1,102 +1,100 @@
-# 🔔 RepReminders
+# RepReminders
 
-Application de rappels répétitifs pour iOS, iPadOS, macOS et watchOS.
-Envoie des notifications toutes les X minutes jusqu'à ce que tu valides.
+<p align="center">
+   <img src="Icons/V2/1024.png" alt="Logo RepReminders" width="180">
+</p>
 
----
+RepReminders est une app de rappels répétitifs pensée pour **iPhone + Apple Watch**.
+Elle permet de planifier un rappel qui renvoie des notifications à intervalle régulier jusqu'à ce que tu le termines.
+
+Le projet est maintenant volontairement **sans version Mac**.
+
+## Ce que fait l’app
+
+- crée des rappels répétitifs avec titre, date de départ, intervalle et nombre de répétitions
+- affiche les rappels actifs et terminés sur iPhone
+- affiche les rappels actifs sur Apple Watch
+- permet de terminer un rappel depuis l’iPhone, la Watch ou les actions système
+- synchronise automatiquement iPhone et Watch
+- expose des actions App Raccourcis pour automatiser la création, la suppression et la validation
 
 ## Prérequis
 
-- macOS 14 Sonoma ou plus
-- Xcode 15 ou plus
-- Homebrew (https://brew.sh)
+- macOS avec Xcode installé
+- iPhone et Apple Watch appairés pour tester la synchronisation
+- un compte Apple Developer si tu veux installer sur appareil réel avec signature automatique
 
----
+## Installation
 
-## Installation en 3 étapes
+1. Ouvre le projet `RepReminders.xcodeproj`
+2. Sélectionne comme destination ton iPhone
+3. Vérifie la signature automatique sur les cibles iPhone et Watch
+4. Lance le build depuis Xcode
 
-### Étape 1 — Décompresser et lancer le setup
-
-```bash
-cd ~/Downloads/RepReminders
-chmod +x setup.sh
-./setup.sh
-```
-
-Le script installe XcodeGen (via Homebrew), génère le projet `.xcodeproj` et ouvre Xcode.
-
-### Étape 2 — Configurer la signature dans Xcode
-
-1. Sélectionne la target **RepReminders**
-2. Onglet **Signing & Capabilities**
-3. Choisis ton **Team** (compte Apple Developer)
-4. Répète pour la target **RepRemindersWatch**
-
-### Étape 3 — Lancer l'app
-
-- **iPhone/iPad** : sélectionne ton appareil → ▶
-- **macOS** : sélectionne "My Mac (Designed for iPad)" → ▶
-- **Apple Watch** : sélectionne ta montre → ▶
-- Autorise les **notifications** au premier lancement
-
----
+La Watch s’installe via l’app iPhone embarquée.
 
 ## Utilisation
 
-### Depuis l'app
+### Depuis l’app iPhone
 
-1. Appuie sur **+** pour créer un rappel
-2. Remplis titre, date/heure, intervalle, nombre de répétitions
-3. Balaye vers la droite → **Validé !** pour arrêter les notifications
+- appuie sur `+` pour créer un rappel
+- modifie ou supprime un rappel depuis la liste
+- utilise le mode sélection pour terminer, remettre en cours ou supprimer plusieurs rappels
 
-### Depuis l'app Raccourcis Apple
+### Depuis l’Apple Watch
 
-Deux actions sont disponibles sous "RepReminders" :
+- consulte les rappels actifs
+- termine un rappel directement depuis la Watch
+- la Watch se resynchronise automatiquement avec l’iPhone
 
-**"Créer un rappel répétitif"**
-- Titre, Date de début, Intervalle (min), Nombre max de répétitions
+### Depuis Raccourcis Apple
 
-**"Valider la présence"**
-- Titre du rappel (doit correspondre exactement)
+Les actions disponibles sont :
 
-### Exemple de Raccourci pour l'émargement
+- `Créer un rappel`
+- `Supprimer un rappel`
+- `Valider un rappel`
+- `Obtenir rappels`
+- `Synchroniser la Watch`
+- `Réinitialiser toutes les données`
 
+## Exemple d’automatisation
+
+Exemple pour créer un rappel de présence depuis une automatisation Apple :
+
+```text
+[Obtenir les événements du calendrier]
+[Choisir dans la liste]
+[Obtenir les détails] -> Date de début
+[Créer un rappel]
+   Titre = "Valider ma présence - [Nom du cours]"
+   Intervalle = 5
+   Nombre max de répétitions = 20
 ```
-[Obtenir les événements du calendrier]  →  Aujourd'hui
-[Choisir dans la liste]                 →  Sélection du cours
-[Obtenir les détails]                   →  Date de début
-[Créer un rappel répétitif]
-   Titre       = "Valider ma présence – [Nom du cours]"
-   Début       = Date de début du cours
-   Intervalle  = 5
-   Répétitions = 20  (couvre 100 minutes)
+
+Exemple pour terminer un rappel depuis un raccourci :
+
+```text
+[Valider un rappel]
+   Titre = "Valider ma présence - [Nom du cours]"
 ```
 
-Second raccourci (widget ou bouton d'action) :
-```
-[Valider la présence]
-   Titre = "Valider ma présence"
-```
+## Comportement des notifications
 
----
+- les notifications sont planifiées localement sur l’appareil
+- chaque rappel génère un nombre fini de notifications, défini par `maxRepetitions`
+- le bouton de notification ouvre l’app
+- la suppression ou la validation nettoie les notifications restantes
 
-## Fonctionnement
+## Synchronisation
 
-- Notifications planifiées **localement** à la création du rappel
-- Chaque notification inclut un bouton **"✓ Valider ma présence"**
-- Appuyer sur ce bouton annule toutes les notifications suivantes
-
-## Limitations
-
-- iOS limite à ~64 notifications planifiées par app
-- watchOS a son propre store de données (pas de sync automatique avec iPhone sans CloudKit)
-
----
+- l’iPhone envoie un état complet à la Watch après chaque création, suppression ou validation via Raccourcis
+- la Watch renvoie aussi ses actions vers l’iPhone
+- si la Watch n’est pas installée, la synchro iPhone vers Watch est ignorée proprement
 
 ## Structure du projet
 
-```
-Shared/     ← Reminder.swift, NotificationManager.swift, AppIntents.swift
-iOS/        ← RepRemindersApp.swift, ContentView.swift, AddReminderView.swift
-watchOS/    ← RepRemindersWatchApp.swift, WatchContentView.swift
+```text
+RepReminders/       -> app iPhone, modèle de données, notifications et App Intents
+RepRemindersWatch/  -> app Apple Watch et synchronisation WatchConnectivity
 ```

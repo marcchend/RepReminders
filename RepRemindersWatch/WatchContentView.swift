@@ -3,6 +3,8 @@ import SwiftData
 import WatchConnectivity
 
 struct WatchContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
+
     @Query(
         filter: #Predicate<Reminder> { !$0.isCompleted },
         sort: \Reminder.startDate
@@ -30,6 +32,11 @@ struct WatchContentView: View {
             NotificationManager.shared.setupCategories()
             WatchSyncManager.shared.activate()
             WatchSyncManager.shared.requestSyncIfPossible()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .inactive || newPhase == .background {
+                WatchSyncManager.shared.requestSyncIfPossible()
+            }
         }
     }
 }
@@ -146,20 +153,26 @@ final class WatchSyncManager: NSObject {
 
     func completeReminder(reminderID: UUID) {
         Task { @MainActor in
-            do {
-                let container = try makeSharedContainer()
-                let context = container.mainContext
-                let reminders = try context.fetch(FetchDescriptor<Reminder>())
+            completeReminderNow(reminderID: reminderID)
+        }
+    }
 
-                guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
+    @MainActor
+    func completeReminderNow(reminderID: UUID) {
+        do {
+            let container = try makeSharedContainer()
+            let context = container.mainContext
+            let reminders = try context.fetch(FetchDescriptor<Reminder>())
 
-                reminder.isCompleted = true
-                NotificationManager.shared.cancelReminder(reminder)
-                try context.save()
-                sendComplete(reminderID: reminder.id)
-            } catch {
-                print("⚠️ Could not complete reminder on watch: \(error)")
-            }
+            guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
+
+            reminder.isCompleted = true
+            NotificationManager.shared.cancelReminder(reminder)
+            try context.save()
+            sendComplete(reminderID: reminder.id)
+            requestSyncIfPossible()
+        } catch {
+            print("⚠️ Could not complete reminder on watch: \(error)")
         }
     }
 

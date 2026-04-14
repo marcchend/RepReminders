@@ -46,6 +46,7 @@ struct CreateReminderIntent: AppIntent {
         try context.save()
 
         NotificationManager.shared.scheduleReminder(reminder)
+        PhoneWatchSyncManager.shared.forceSyncSnapshot()
 
         return .result(
             dialog: IntentDialog("Rappel « \(title) » créé ! Tu seras notifié toutes les \(intervalMinutes) minutes.")
@@ -83,6 +84,12 @@ struct DeleteReminderIntent: AppIntent {
             context.delete(reminder)
         }
         try context.save()
+        Task {
+            await NotificationManager.shared.removeOrphanedNotifications(
+                validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
+            )
+        }
+        PhoneWatchSyncManager.shared.forceSyncSnapshot()
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » supprimé et notifications annulées."))
     }
@@ -118,6 +125,12 @@ struct CompleteReminderIntent: AppIntent {
             NotificationManager.shared.cancelReminder(reminder)
         }
         try context.save()
+        Task {
+            await NotificationManager.shared.removeOrphanedNotifications(
+                validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
+            )
+        }
+        PhoneWatchSyncManager.shared.forceSyncSnapshot()
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » validé. Les notifications ont été annulées."))
     }
@@ -137,6 +150,23 @@ struct SyncWatchIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         PhoneWatchSyncManager.shared.forceSyncSnapshot()
         return .result(dialog: IntentDialog("Synchronisation Watch lancée."))
+    }
+}
+
+// MARK: – Réinitialiser toutes les données
+
+struct ResetAllDataIntent: AppIntent {
+
+    static var title: LocalizedStringResource = "Réinitialiser toutes les données"
+    static var description = IntentDescription(
+        "Supprime tous les rappels locaux, nettoie les notifications et force une synchronisation vers l'Apple Watch.",
+        categoryName: "RepReminders"
+    )
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        PhoneWatchSyncManager.shared.resetAllDataAndSync()
+        return .result(dialog: IntentDialog("Réinitialisation lancée sur iPhone et synchronisation Watch demandée."))
     }
 }
 
@@ -436,6 +466,15 @@ struct RepRemindersShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Synchroniser la Watch",
             systemImageName: "applewatch"
+        )
+        AppShortcut(
+            intent: ResetAllDataIntent(),
+            phrases: [
+                "Réinitialiser les données de \(.applicationName)",
+                "Vider tous les rappels dans \(.applicationName)"
+            ],
+            shortTitle: "Reset des données",
+            systemImageName: "trash.circle.fill"
         )
         AppShortcut(
             intent: GetRemindersIntent(),

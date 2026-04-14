@@ -3,6 +3,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Reminder.startDate, order: .forward) private var reminders: [Reminder]
     @State private var showingAddReminder = false
     @State private var editingReminder: Reminder?
@@ -141,6 +142,11 @@ struct ContentView: View {
                 await NotificationManager.shared.removeOrphanedNotifications(
                     validReminderIDs: Set(reminders.map(\.id))
                 )
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                PhoneWatchSyncManager.shared.forceSyncSnapshot()
             }
         }
     }

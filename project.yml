@@ -27,13 +27,11 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        SUPPORTS_MACCATALYST: "YES"
-        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: "YES"
 
     info:
       properties:
         CFBundleDisplayName: RepReminders
-        NSUserNotificationsUsageDescription: "RepeatRemind utilise les notifications pour vous rappeler de valider votre présence."
+        NSUserNotificationsUsageDescription: "RepReminders utilise les notifications pour vous rappeler de valider votre présence."
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations:
@@ -63,7 +61,7 @@ targets:
       properties:
         CFBundleDisplayName: RepReminders
         WKWatchKitApp: true
-        NSUserNotificationsUsageDescription: "RepeatRemind utilise les notifications pour vous rappeler de valider votre présence."
+        NSUserNotificationsUsageDescription: "RepReminders utilise les notifications pour vous rappeler de valider votre présence."
 
     sources:
       - path: RepRemindersWatch

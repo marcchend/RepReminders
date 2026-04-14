@@ -48,34 +48,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
-    // Handle tapping the "Valider ma présence" action button in a notification
+    // The notification action now only opens the app.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        defer { completionHandler() }
-
-        guard response.actionIdentifier == "VALIDATE_ACTION",
-              let reminderIDString = response.notification.request.content
-                  .userInfo["reminderID"] as? String
-        else { return }
-
-        Task { @MainActor in
-            do {
-                let container = try makeSharedContainer()
-                let context = container.mainContext
-                let all = try context.fetch(FetchDescriptor<Reminder>())
-                if let reminder = all.first(where: { $0.id.uuidString == reminderIDString }) {
-                    reminder.isCompleted = true
-                    NotificationManager.shared.cancelReminder(reminder)
-                    try context.save()
-                    PhoneWatchSyncManager.shared.sendCurrentState()
-                }
-            } catch {
-                print("⚠️ Error completing reminder from notification: \(error)")
-            }
-        }
+        completionHandler()
     }
 
     // Display notifications while the app is in the foreground
@@ -108,7 +87,10 @@ final class PhoneWatchSyncManager: NSObject {
 
     func forceSyncSnapshot() {
         #if canImport(WatchConnectivity)
-        guard WCSession.isSupported() else { return }
+        guard canSyncToWatch() else {
+            pendingForcedSync = false
+            return
+        }
         pendingForcedSync = true
         if !isActivated {
             activate()
@@ -121,7 +103,10 @@ final class PhoneWatchSyncManager: NSObject {
 
     func pushSnapshot(reminders: [Reminder]) {
         #if canImport(WatchConnectivity)
-        guard WCSession.isSupported() else { return }
+        guard canSyncToWatch() else {
+            print("ℹ️ Watch app not installed yet, skipping sync snapshot.")
+            return
+        }
 
         let payload = reminders.map { reminder in
             [
@@ -152,6 +137,35 @@ final class PhoneWatchSyncManager: NSObject {
                 pushSnapshot(reminders: reminders)
             } catch {
                 print("⚠️ Could not fetch reminders for sync: \(error)")
+            }
+        }
+    }
+
+    #if canImport(WatchConnectivity)
+    private func canSyncToWatch() -> Bool {
+        guard WCSession.isSupported() else { return false }
+        let session = WCSession.default
+        return session.isPaired && session.isWatchAppInstalled
+    }
+    #endif
+
+    func resetAllDataAndSync() {
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let reminders = try context.fetch(FetchDescriptor<Reminder>())
+
+                for reminder in reminders {
+                    NotificationManager.shared.cancelReminder(reminder)
+                    context.delete(reminder)
+                }
+
+                try context.save()
+                await NotificationManager.shared.removeOrphanedNotifications(validReminderIDs: Set<UUID>())
+                forceSyncSnapshot()
+            } catch {
+                print("⚠️ Could not reset all reminder data: \(error)")
             }
         }
     }
