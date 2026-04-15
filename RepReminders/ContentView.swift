@@ -238,6 +238,12 @@ struct ContentView: View {
             NotificationManager.shared.cancelReminder(reminder)
             modelContext.delete(reminder)
         }
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ Save single delete error: \(error)")
+        }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
     }
 
     private func toggleSelection(for reminder: Reminder) {
@@ -288,6 +294,7 @@ struct ContentView: View {
         } catch {
             print("⚠️ Save reminder edit error: \(error)")
         }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
     }
 
     private func completeSelected() {
@@ -302,6 +309,7 @@ struct ContentView: View {
         } catch {
             print("⚠️ Save completion error: \(error)")
         }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
@@ -324,6 +332,7 @@ struct ContentView: View {
         } catch {
             print("⚠️ Save restore error: \(error)")
         }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
@@ -345,6 +354,7 @@ struct ContentView: View {
         } catch {
             print("⚠️ Save delete error: \(error)")
         }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
         withAnimation(.easeInOut(duration: 0.22)) {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
@@ -365,6 +375,7 @@ struct ContentView: View {
         } catch {
             print("⚠️ Save single restore error: \(error)")
         }
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
         Task {
             await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
         }
@@ -374,6 +385,8 @@ struct ContentView: View {
 // MARK: – Active Reminder Row
 
 struct ReminderRow: View {
+    @Environment(\.modelContext) private var modelContext
+
     let reminder: Reminder
     let isSelectionMode: Bool
     let isSelected: Bool
@@ -435,6 +448,12 @@ struct ReminderRow: View {
                         reminder.isCompleted = true
                         NotificationManager.shared.cancelReminder(reminder)
                     }
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("⚠️ Save swipe completion error: \(error)")
+                    }
+                    PhoneWatchSyncManager.shared.requestSyncSnapshot()
                 } label: {
                     Label("Validé !", systemImage: "checkmark.circle.fill")
                 }

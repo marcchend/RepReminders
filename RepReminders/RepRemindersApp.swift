@@ -87,6 +87,7 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
     static let shared = PhoneWatchSyncManager()
     private var isActivated = false
     private var pendingForcedSync = false
+    private var scheduledSyncWorkItem: DispatchWorkItem?
 
     @MainActor @Published private(set) var isWatchPaired = false
     @MainActor @Published private(set) var isWatchAppInstalled = false
@@ -120,6 +121,26 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
         }
         pendingForcedSync = false
         sendCurrentState()
+        #endif
+    }
+
+    /// Coalesces multiple sync requests into a single forced sync.
+    /// Useful for shortcuts/automation bursts creating or deleting many reminders.
+    func requestSyncSnapshot(delayNanoseconds: UInt64 = 400_000_000) {
+        #if canImport(WatchConnectivity)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            self.scheduledSyncWorkItem?.cancel()
+
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.forceSyncSnapshot()
+            }
+
+            self.scheduledSyncWorkItem = workItem
+            let clampedDelay = Int(clamping: delayNanoseconds)
+            DispatchQueue.main.asyncAfter(deadline: .now() + .nanoseconds(clampedDelay), execute: workItem)
+        }
         #endif
     }
 

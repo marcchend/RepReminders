@@ -56,7 +56,7 @@ struct CreateReminderIntent: AppIntent {
         Task {
             await NotificationManager.shared.verifyAndRepairNotifications(for: [reminder])
         }
-        PhoneWatchSyncManager.shared.forceSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
 
         return .result(
             dialog: IntentDialog("Rappel « \(title) » créé ! Tu seras notifié toutes les \(intervalMinutes) minutes.")
@@ -107,7 +107,7 @@ struct DeleteReminderIntent: AppIntent {
             )
             await NotificationManager.shared.verifyAndRepairNotifications(for: try context.fetch(FetchDescriptor<Reminder>()))
         }
-        PhoneWatchSyncManager.shared.forceSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » supprimé et notifications annulées."))
     }
@@ -156,7 +156,7 @@ struct CompleteReminderIntent: AppIntent {
             )
             await NotificationManager.shared.verifyAndRepairNotifications(for: try context.fetch(FetchDescriptor<Reminder>()))
         }
-        PhoneWatchSyncManager.shared.forceSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » validé. Les notifications ont été annulées."))
     }
