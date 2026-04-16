@@ -304,6 +304,11 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
             return
         }
 
+        if type == "snapshot" {
+            applySnapshotFromWatch(message)
+            return
+        }
+
         if type == "create" {
             Task { @MainActor in
                 do {
@@ -376,6 +381,81 @@ extension PhoneWatchSyncManager: WCSessionDelegate {
                 sendCurrentState()
             } catch {
                 print("⚠️ Could not apply watch action: \(error)")
+            }
+        }
+    }
+
+    private func applySnapshotFromWatch(_ payload: [String: Any]) {
+        guard let rawReminders = payload["reminders"] as? [[String: Any]] else { return }
+
+        Task { @MainActor in
+            do {
+                let container = try makeSharedContainer()
+                let context = container.mainContext
+                let existing = try context.fetch(FetchDescriptor<Reminder>())
+                var existingByID: [UUID: Reminder] = [:]
+
+                for reminder in existing {
+                    existingByID[reminder.id] = reminder
+                }
+
+                var incomingIDs: Set<UUID> = []
+
+                for item in rawReminders {
+                    guard let idString = item["id"] as? String,
+                          let id = UUID(uuidString: idString),
+                          let title = item["title"] as? String,
+                          let intervalMinutes = item["intervalMinutes"] as? Int,
+                          let startTimestamp = item["startDate"] as? TimeInterval,
+                          let maxRepetitions = item["maxRepetitions"] as? Int,
+                          let isCompleted = item["isCompleted"] as? Bool,
+                          let createdAtTimestamp = item["createdAt"] as? TimeInterval
+                    else { continue }
+
+                    incomingIDs.insert(id)
+
+                    if let current = existingByID[id] {
+                        current.title = title
+                        current.intervalMinutes = intervalMinutes
+                        current.startDate = Date(timeIntervalSince1970: startTimestamp)
+                        current.maxRepetitions = maxRepetitions
+                        current.isCompleted = isCompleted
+                        current.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+                    } else {
+                        let reminder = Reminder(
+                            title: title,
+                            intervalMinutes: intervalMinutes,
+                            startDate: Date(timeIntervalSince1970: startTimestamp),
+                            maxRepetitions: maxRepetitions
+                        )
+                        reminder.id = id
+                        reminder.isCompleted = isCompleted
+                        reminder.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+                        context.insert(reminder)
+                    }
+                }
+
+                for reminder in existing where !incomingIDs.contains(reminder.id) {
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
+                    context.delete(reminder)
+                }
+
+                try context.save()
+
+                let syncedReminders = try context.fetch(FetchDescriptor<Reminder>())
+                for reminder in syncedReminders {
+                    await NotificationManager.shared.cancelReminderAndWait(reminder)
+                    if !reminder.isCompleted {
+                        NotificationManager.shared.scheduleReminder(reminder)
+                    }
+                }
+
+                await NotificationManager.shared.removeOrphanedNotifications(
+                    validReminderIDs: Set(syncedReminders.map(\.id))
+                )
+                await NotificationManager.shared.verifyAndRepairNotifications(for: syncedReminders)
+            } catch {
+                print("⚠️ Could not apply watch snapshot: \(error)")
             }
         }
     }

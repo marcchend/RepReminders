@@ -124,14 +124,31 @@ final class WatchSyncManager: NSObject {
         }
     }
 
-    func sendComplete(reminderID: UUID) {
+    private func reminderPayloads(from reminders: [Reminder]) -> [[String: Any]] {
+        reminders.map { reminder in
+            [
+                "id": reminder.id.uuidString,
+                "title": reminder.title,
+                "intervalMinutes": reminder.intervalMinutes,
+                "startDate": reminder.startDate.timeIntervalSince1970,
+                "maxRepetitions": reminder.maxRepetitions,
+                "isCompleted": reminder.isCompleted,
+                "createdAt": reminder.createdAt.timeIntervalSince1970
+            ] as [String: Any]
+        }
+    }
+
+    func sendSnapshot(reminders: [Reminder]) {
         guard WCSession.isSupported() else { return }
-        let payload: [String: Any] = ["type": "complete", "id": reminderID.uuidString]
+        let payload: [String: Any] = [
+            "type": "snapshot",
+            "reminders": reminderPayloads(from: reminders)
+        ]
         let session = WCSession.default
 
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { error in
-                print("⚠️ Could not send completion action: \(error)")
+                print("⚠️ Could not send reminder snapshot: \(error)")
             }
         } else {
             session.transferUserInfo(payload)
@@ -172,7 +189,8 @@ final class WatchSyncManager: NSObject {
             reminder.isCompleted = true
             await NotificationManager.shared.cancelReminderAndWait(reminder)
             try context.save()
-            sendComplete(reminderID: reminder.id)
+            let updatedReminders = try context.fetch(FetchDescriptor<Reminder>())
+            sendSnapshot(reminders: updatedReminders)
         } catch {
             print("⚠️ Could not complete reminder on watch: \(error)")
         }
