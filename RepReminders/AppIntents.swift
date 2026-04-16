@@ -53,9 +53,6 @@ struct CreateReminderIntent: AppIntent {
         try context.save()
 
         NotificationManager.shared.scheduleReminder(reminder)
-        Task {
-            await NotificationManager.shared.verifyAndRepairNotifications(for: [reminder])
-        }
         PhoneWatchSyncManager.shared.requestSyncSnapshot()
 
         return .result(
@@ -105,7 +102,6 @@ struct DeleteReminderIntent: AppIntent {
             await NotificationManager.shared.removeOrphanedNotifications(
                 validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
             )
-            await NotificationManager.shared.verifyAndRepairNotifications(for: try context.fetch(FetchDescriptor<Reminder>()))
         }
         PhoneWatchSyncManager.shared.requestSyncSnapshot()
 
@@ -154,7 +150,6 @@ struct CompleteReminderIntent: AppIntent {
             await NotificationManager.shared.removeOrphanedNotifications(
                 validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
             )
-            await NotificationManager.shared.verifyAndRepairNotifications(for: try context.fetch(FetchDescriptor<Reminder>()))
         }
         PhoneWatchSyncManager.shared.requestSyncSnapshot()
 

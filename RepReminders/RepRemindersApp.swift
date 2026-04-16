@@ -124,17 +124,19 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
         #endif
     }
 
-    /// Coalesces multiple sync requests into a single forced sync.
-    /// Useful for shortcuts/automation bursts creating or deleting many reminders.
-    func requestSyncSnapshot(delayNanoseconds: UInt64 = 400_000_000) {
+    /// Schedules a delayed sync once.
+    /// Additional requests are ignored until the pending sync has executed.
+    func requestSyncSnapshot(delayNanoseconds: UInt64 = 2_000_000_000) {
         #if canImport(WatchConnectivity)
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            self.scheduledSyncWorkItem?.cancel()
+            guard self.scheduledSyncWorkItem == nil else { return }
 
             let workItem = DispatchWorkItem { [weak self] in
-                self?.forceSyncSnapshot()
+                guard let self else { return }
+                self.scheduledSyncWorkItem = nil
+                self.forceSyncSnapshot()
             }
 
             self.scheduledSyncWorkItem = workItem
