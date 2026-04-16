@@ -41,11 +41,27 @@ final class NotificationManager: NSObject {
     // MARK: – Schedule
 
     func scheduleReminder(_ reminder: Reminder) {
+        Task { [self] in
+            await self.scheduleReminderAfterCleanup(reminder)
+        }
+    }
+
+    private func scheduleReminderAfterCleanup(_ reminder: Reminder) async {
+        // Clean first to avoid duplicates from stale requests when a reminder is edited/rescheduled.
+        await self.removeNotifications(for: reminder)
+        self.scheduleRequests(for: reminder)
+        await self.performPostScheduleIntegrityCheck(for: reminder)
+    }
+
+    private func scheduleRequests(for reminder: Reminder) {
         let center = UNUserNotificationCenter.current()
 
-        for index in 0..<reminder.maxRepetitions {
+        let safeIntervalMinutes = max(1, reminder.intervalMinutes)
+        let safeMaxRepetitions = max(1, reminder.maxRepetitions)
+
+        for index in 0..<safeMaxRepetitions {
             let fireDate = reminder.startDate
-                .addingTimeInterval(Double(index * reminder.intervalMinutes) * 60)
+                .addingTimeInterval(Double(index * safeIntervalMinutes) * 60)
 
             guard fireDate > Date() else { continue }
 
@@ -79,10 +95,6 @@ final class NotificationManager: NSObject {
                 }
             }
         }
-
-        Task { @MainActor [self] in
-            await self.performPostScheduleIntegrityCheck(for: reminder)
-        }
     }
 
     func plannedFireDates(for reminder: Reminder, referenceDate: Date = Date()) -> [Date] {
@@ -109,8 +121,7 @@ final class NotificationManager: NSObject {
 
             if pendingCount < expectedCount {
                 print("⚠️ Repairing reminder \(reminder.id.uuidString): expected \(expectedCount) pending notifications, found \(pendingCount)")
-                await removeNotifications(for: reminder)
-                scheduleReminder(reminder)
+                await scheduleReminderAfterCleanup(reminder)
 
                 let repairedCount = await notificationCount(for: reminder)
                 if repairedCount < expectedCount {

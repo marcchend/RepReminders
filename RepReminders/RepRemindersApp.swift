@@ -17,6 +17,7 @@ struct RepRemindersApp: App {
         }
     }()
 
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -88,6 +89,7 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
     private var isActivated = false
     private var pendingForcedSync = false
     private var scheduledSyncWorkItem: DispatchWorkItem?
+    private let lastSyncRequestKey = "PhoneWatchSyncManager.lastSyncRequestAt"
 
     @MainActor @Published private(set) var isWatchPaired = false
     @MainActor @Published private(set) var isWatchAppInstalled = false
@@ -126,10 +128,24 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
 
     /// Schedules a delayed sync once.
     /// Additional requests are ignored until the pending sync has executed.
-    func requestSyncSnapshot(delayNanoseconds: UInt64 = 4_000_000_000) {
+    /// A persistent throttle avoids repeated forced sync bursts from Shortcut batch actions.
+    func requestSyncSnapshot(
+        delayNanoseconds: UInt64 = 4_000_000_000,
+        minimumInterval: TimeInterval = 6,
+        bypassThrottle: Bool = false
+    ) {
         #if canImport(WatchConnectivity)
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+
+            if !bypassThrottle {
+                let now = Date().timeIntervalSince1970
+                let last = UserDefaults.standard.double(forKey: self.lastSyncRequestKey)
+                if now - last < minimumInterval {
+                    return
+                }
+                UserDefaults.standard.set(now, forKey: self.lastSyncRequestKey)
+            }
 
             guard self.scheduledSyncWorkItem == nil else { return }
 

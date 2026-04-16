@@ -53,7 +53,10 @@ struct CreateReminderIntent: AppIntent {
         try context.save()
 
         NotificationManager.shared.scheduleReminder(reminder)
-        PhoneWatchSyncManager.shared.requestSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot(
+            delayNanoseconds: 8_000_000_000,
+            minimumInterval: 12
+        )
 
         return .result(
             dialog: IntentDialog("Rappel « \(title) » créé ! Tu seras notifié toutes les \(intervalMinutes) minutes.")
@@ -103,7 +106,10 @@ struct DeleteReminderIntent: AppIntent {
                 validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
             )
         }
-        PhoneWatchSyncManager.shared.requestSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot(
+            delayNanoseconds: 8_000_000_000,
+            minimumInterval: 12
+        )
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » supprimé et notifications annulées."))
     }
@@ -151,7 +157,10 @@ struct CompleteReminderIntent: AppIntent {
                 validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
             )
         }
-        PhoneWatchSyncManager.shared.requestSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot(
+            delayNanoseconds: 8_000_000_000,
+            minimumInterval: 12
+        )
 
         return .result(dialog: IntentDialog("Rappel « \(reminderTitle) » validé. Les notifications ont été annulées."))
     }
@@ -169,7 +178,10 @@ struct SyncWatchIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        PhoneWatchSyncManager.shared.requestSyncSnapshot()
+        PhoneWatchSyncManager.shared.requestSyncSnapshot(
+            delayNanoseconds: 300_000_000,
+            bypassThrottle: true
+        )
         return .result(dialog: IntentDialog("Synchronisation Watch planifiée."))
     }
 }
