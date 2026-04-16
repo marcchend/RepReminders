@@ -126,7 +126,7 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
 
     /// Schedules a delayed sync once.
     /// Additional requests are ignored until the pending sync has executed.
-    func requestSyncSnapshot(delayNanoseconds: UInt64 = 2_000_000_000) {
+    func requestSyncSnapshot(delayNanoseconds: UInt64 = 4_000_000_000) {
         #if canImport(WatchConnectivity)
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -178,15 +178,44 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
 
     func sendCurrentState() {
         Task { @MainActor in
-            do {
-                let container = try makeSharedContainer()
-                let context = container.mainContext
-                let reminders = try context.fetch(FetchDescriptor<Reminder>())
-                pushSnapshot(reminders: reminders)
-            } catch {
-                print("⚠️ Could not fetch reminders for sync: \(error)")
-            }
+            await sendCurrentStateNow()
         }
+    }
+
+    @MainActor
+    func sendCurrentStateNow() async {
+        do {
+            let container = try makeSharedContainer()
+            let context = container.mainContext
+            let reminders = try context.fetch(FetchDescriptor<Reminder>())
+            pushSnapshot(reminders: reminders)
+        } catch {
+            print("⚠️ Could not fetch reminders for sync: \(error)")
+        }
+    }
+
+    @MainActor
+    func syncWatchNow() async {
+        #if canImport(WatchConnectivity)
+        guard WCSession.isSupported() else { return }
+        let session = WCSession.default
+        updateWatchAvailability(from: session)
+
+        guard canSyncToWatch(session: session) else {
+            pendingForcedSync = true
+            activate()
+            return
+        }
+
+        if !isActivated {
+            pendingForcedSync = true
+            activate()
+            return
+        }
+
+        pendingForcedSync = false
+        await sendCurrentStateNow()
+        #endif
     }
 
     #if canImport(WatchConnectivity)

@@ -169,8 +169,8 @@ struct SyncWatchIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        PhoneWatchSyncManager.shared.forceSyncSnapshot()
-        return .result(dialog: IntentDialog("Synchronisation Watch lancée."))
+        PhoneWatchSyncManager.shared.requestSyncSnapshot()
+        return .result(dialog: IntentDialog("Synchronisation Watch planifiée."))
     }
 }
 
