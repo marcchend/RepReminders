@@ -129,8 +129,8 @@ final class PhoneWatchSyncManager: NSObject, ObservableObject {
     /// Schedules a delayed sync once.
     /// Additional requests are ignored until the pending sync has executed.
     /// A persistent throttle avoids repeated forced sync bursts from Shortcut batch actions.
-    func requestSyncSnapshot(
-        delayNanoseconds: UInt64 = 4_000_000_000,
+        func requestSyncSnapshot(
+            delayNanoseconds: UInt64 = 6_000_000_000,
         minimumInterval: TimeInterval = 6,
         bypassThrottle: Bool = false
     ) {

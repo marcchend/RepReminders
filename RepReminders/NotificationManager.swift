@@ -8,6 +8,14 @@ final class NotificationManager: NSObject {
 
     private let reminderNotificationKey = "reminderID"
 
+    private struct ReminderScheduleSpec {
+        let reminderID: String
+        let title: String
+        let startDate: Date
+        let intervalMinutes: Int
+        let maxRepetitions: Int
+    }
+
     // MARK: – Permission
 
     func requestAuthorization() async -> Bool {
@@ -15,6 +23,26 @@ final class NotificationManager: NSObject {
             return try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])
         } catch {
+            return false
+        }
+    }
+
+    func currentAuthorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
+    }
+
+    func ensureAuthorizationIfNeeded() async -> Bool {
+        let status = await currentAuthorizationStatus()
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        case .notDetermined:
+            return await requestAuthorization()
+        default:
             return false
         }
     }
@@ -40,33 +68,48 @@ final class NotificationManager: NSObject {
 
     // MARK: – Schedule
 
-    func scheduleReminder(_ reminder: Reminder) {
+    func scheduleReminder(_ reminder: Reminder, runIntegrityCheck: Bool = true) {
+        let spec = scheduleSpec(from: reminder)
         Task { [self] in
-            await self.scheduleReminderAfterCleanup(reminder)
+            await self.scheduleReminderAfterCleanup(spec, runIntegrityCheck: runIntegrityCheck)
         }
     }
 
-    private func scheduleReminderAfterCleanup(_ reminder: Reminder) async {
+    private func scheduleReminderAfterCleanup(_ spec: ReminderScheduleSpec, runIntegrityCheck: Bool = true) async {
         // Clean first to avoid duplicates from stale requests when a reminder is edited/rescheduled.
-        await self.removeNotifications(for: reminder)
-        self.scheduleRequests(for: reminder)
-        await self.performPostScheduleIntegrityCheck(for: reminder)
+        await self.removeNotifications(reminderID: spec.reminderID)
+        self.scheduleRequests(for: spec)
+        if runIntegrityCheck {
+            Task { @MainActor [self] in
+                await self.performPostScheduleIntegrityCheck(for: spec)
+            }
+        }
     }
 
-    private func scheduleRequests(for reminder: Reminder) {
+    private func scheduleSpec(from reminder: Reminder) -> ReminderScheduleSpec {
+        ReminderScheduleSpec(
+            reminderID: reminder.id.uuidString,
+            title: reminder.title,
+            startDate: reminder.startDate,
+            intervalMinutes: reminder.intervalMinutes,
+            maxRepetitions: reminder.maxRepetitions
+        )
+    }
+
+    private func scheduleRequests(for spec: ReminderScheduleSpec) {
         let center = UNUserNotificationCenter.current()
 
-        let safeIntervalMinutes = max(1, reminder.intervalMinutes)
-        let safeMaxRepetitions = max(1, reminder.maxRepetitions)
+        let safeIntervalMinutes = max(1, spec.intervalMinutes)
+        let safeMaxRepetitions = max(1, spec.maxRepetitions)
 
         for index in 0..<safeMaxRepetitions {
-            let fireDate = reminder.startDate
+            let fireDate = spec.startDate
                 .addingTimeInterval(Double(index * safeIntervalMinutes) * 60)
 
             guard fireDate > Date() else { continue }
 
             let content = UNMutableNotificationContent()
-            content.title = reminder.title
+            content.title = spec.title
             content.subtitle = fireDate.formatted(
                 Date.FormatStyle(date: .omitted, time: .shortened)
                     .locale(.autoupdatingCurrent)
@@ -74,14 +117,14 @@ final class NotificationManager: NSObject {
             content.body = ""
             content.sound = .default
             content.categoryIdentifier = "REMINDER_CATEGORY"
-            content.userInfo = [reminderNotificationKey: reminder.id.uuidString]
+            content.userInfo = [reminderNotificationKey: spec.reminderID]
 
             let components = Calendar.current.dateComponents(
                 [.year, .month, .day, .hour, .minute, .second],
                 from: fireDate
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            let identifier = "\(reminder.id.uuidString)-\(index)"
+            let identifier = "\(spec.reminderID)-\(index)"
 
             let request = UNNotificationRequest(
                 identifier: identifier,
@@ -111,21 +154,23 @@ final class NotificationManager: NSObject {
         let activeReminders = reminders.filter { !$0.isCompleted }
 
         for reminder in activeReminders {
+            let reminderID = reminder.id.uuidString
+            let spec = scheduleSpec(from: reminder)
             let expectedCount = plannedFireDates(for: reminder).count
-            let pendingCount = await notificationCount(for: reminder)
+            let pendingCount = await notificationCount(reminderID: reminderID)
 
             if expectedCount == 0 {
-                await removeNotifications(for: reminder)
+                await removeNotifications(reminderID: reminderID)
                 continue
             }
 
             if pendingCount < expectedCount {
-                print("⚠️ Repairing reminder \(reminder.id.uuidString): expected \(expectedCount) pending notifications, found \(pendingCount)")
-                await scheduleReminderAfterCleanup(reminder)
+                print("⚠️ Repairing reminder \(reminderID): expected \(expectedCount) pending notifications, found \(pendingCount)")
+                await scheduleReminderAfterCleanup(spec, runIntegrityCheck: false)
 
-                let repairedCount = await notificationCount(for: reminder)
+                let repairedCount = await notificationCount(reminderID: reminderID)
                 if repairedCount < expectedCount {
-                    print("⚠️ Reminder \(reminder.id.uuidString) still has only \(repairedCount)/\(expectedCount) notifications after repair")
+                    print("⚠️ Reminder \(reminderID) still has only \(repairedCount)/\(expectedCount) notifications after repair")
                 }
             }
         }
@@ -134,12 +179,15 @@ final class NotificationManager: NSObject {
     }
 
     func pendingCount(for reminder: Reminder) async -> Int {
-        await notificationCount(for: reminder, includeDelivered: false)
+        await notificationCount(reminderID: reminder.id.uuidString, includeDelivered: false)
     }
 
     func removeNotifications(for reminder: Reminder) async {
+        await removeNotifications(reminderID: reminder.id.uuidString)
+    }
+
+    private func removeNotifications(reminderID: String) async {
         let center = UNUserNotificationCenter.current()
-        let reminderID = reminder.id.uuidString
         let identifierPrefix = "\(reminderID)-"
 
         let pendingRequests = await center.pendingNotificationRequests()
@@ -177,13 +225,14 @@ final class NotificationManager: NSObject {
     }
 
     func cancelReminder(_ reminder: Reminder) {
+        let reminderID = reminder.id.uuidString
         Task {
-            await removeNotifications(for: reminder)
+            await removeNotifications(reminderID: reminderID)
         }
     }
 
     func cancelReminderAndWait(_ reminder: Reminder) async {
-        await removeNotifications(for: reminder)
+        await removeNotifications(reminderID: reminder.id.uuidString)
     }
 
     @MainActor
@@ -238,8 +287,7 @@ final class NotificationManager: NSObject {
         }
     }
 
-    private func notificationCount(for reminder: Reminder, includeDelivered: Bool = true) async -> Int {
-        let reminderID = reminder.id.uuidString
+    private func notificationCount(reminderID: String, includeDelivered: Bool = true) async -> Int {
         let identifierPrefix = "\(reminderID)-"
         let pendingRequests = await UNUserNotificationCenter.current().pendingNotificationRequests()
 
@@ -272,14 +320,24 @@ final class NotificationManager: NSObject {
         return matches
     }
 
-    private func performPostScheduleIntegrityCheck(for reminder: Reminder) async {
-        let expectedCount = plannedFireDates(for: reminder).count
+    private func plannedFireDates(for spec: ReminderScheduleSpec, referenceDate: Date = Date()) -> [Date] {
+        guard spec.intervalMinutes > 0, spec.maxRepetitions > 0 else { return [] }
+
+        return (0..<spec.maxRepetitions).compactMap { index in
+            let fireDate = spec.startDate
+                .addingTimeInterval(Double(index * spec.intervalMinutes) * 60)
+            return fireDate > referenceDate ? fireDate : nil
+        }
+    }
+
+    private func performPostScheduleIntegrityCheck(for spec: ReminderScheduleSpec) async {
+        let expectedCount = plannedFireDates(for: spec).count
         guard expectedCount > 0 else { return }
 
         let retryDelaysInNanoseconds: [UInt64] = [250_000_000, 750_000_000, 1_500_000_000]
 
         for delay in retryDelaysInNanoseconds {
-            let currentCount = await notificationCount(for: reminder)
+            let currentCount = await notificationCount(reminderID: spec.reminderID)
             if currentCount >= expectedCount {
                 return
             }
@@ -287,7 +345,7 @@ final class NotificationManager: NSObject {
             try? await Task.sleep(nanoseconds: delay)
         }
 
-        await verifyAndRepairNotifications(for: [reminder])
+        await scheduleReminderAfterCleanup(spec, runIntegrityCheck: false)
     }
 
     private func deliveredNotifications() async -> [UNNotification] {

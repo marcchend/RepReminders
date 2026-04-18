@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var editingReminder: Reminder?
     @State private var isSelectionMode = false
     @State private var selectedReminderIDs: Set<UUID> = []
+    @State private var maintenanceTask: Task<Void, Never>?
 
     private var syncToken: String {
         reminders
@@ -129,29 +130,19 @@ struct ContentView: View {
         }
         .task {
             _ = await NotificationManager.shared.requestAuthorization()
-            await NotificationManager.shared.removeOrphanedNotifications(
-                validReminderIDs: Set(reminders.map(\.id))
-            )
-            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
+            scheduleNotificationMaintenance(runRepair: true, delayNanoseconds: 200_000_000)
         }
         .onAppear {
-            PhoneWatchSyncManager.shared.pushSnapshot(reminders: reminders)
+            PhoneWatchSyncManager.shared.requestSyncSnapshot()
         }
         .onChange(of: syncToken) { _, _ in
-            PhoneWatchSyncManager.shared.pushSnapshot(reminders: reminders)
-            Task {
-                await NotificationManager.shared.removeOrphanedNotifications(
-                    validReminderIDs: Set(reminders.map(\.id))
-                )
-                await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
-            }
+            PhoneWatchSyncManager.shared.requestSyncSnapshot()
+            scheduleNotificationMaintenance(runRepair: false)
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                PhoneWatchSyncManager.shared.forceSyncSnapshot()
-                Task {
-                    await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
-                }
+                PhoneWatchSyncManager.shared.requestSyncSnapshot(delayNanoseconds: 1_500_000_000)
+                scheduleNotificationMaintenance(runRepair: true, delayNanoseconds: 1_200_000_000)
             }
         }
     }
@@ -314,9 +305,6 @@ struct ContentView: View {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
         }
-        Task {
-            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
-        }
     }
 
     private func markSelectedAsNotCompleted() {
@@ -337,9 +325,6 @@ struct ContentView: View {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
         }
-        Task {
-            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
-        }
     }
 
     private func deleteSelected() {
@@ -359,9 +344,6 @@ struct ContentView: View {
             selectedReminderIDs.removeAll()
             isSelectionMode = false
         }
-        Task {
-            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
-        }
     }
 
     private func markReminderAsNotCompleted(_ reminder: Reminder) {
@@ -376,8 +358,26 @@ struct ContentView: View {
             print("⚠️ Save single restore error: \(error)")
         }
         PhoneWatchSyncManager.shared.requestSyncSnapshot()
-        Task {
-            await NotificationManager.shared.verifyAndRepairNotifications(for: reminders)
+    }
+
+    private func scheduleNotificationMaintenance(
+        runRepair: Bool,
+        delayNanoseconds: UInt64 = 2_000_000_000
+    ) {
+        maintenanceTask?.cancel()
+
+        let snapshot = reminders
+        maintenanceTask = Task {
+            try? await Task.sleep(nanoseconds: delayNanoseconds)
+            if Task.isCancelled { return }
+
+            await NotificationManager.shared.removeOrphanedNotifications(
+                validReminderIDs: Set(snapshot.map(\.id))
+            )
+
+            if runRepair {
+                await NotificationManager.shared.verifyAndRepairNotifications(for: snapshot)
+            }
         }
     }
 }

@@ -32,13 +32,6 @@ struct CreateReminderIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let granted = await NotificationManager.shared.requestAuthorization()
-        guard granted else {
-            return .result(
-                dialog: IntentDialog("Les notifications ne sont pas autorisées. Active-les dans Réglages pour recevoir les rappels.")
-            )
-        }
-
         let container = try makeContainer()
         let context = container.mainContext
         let date = startDate ?? Date.now
@@ -52,7 +45,7 @@ struct CreateReminderIntent: AppIntent {
         context.insert(reminder)
         try context.save()
 
-        NotificationManager.shared.scheduleReminder(reminder)
+        NotificationManager.shared.scheduleReminder(reminder, runIntegrityCheck: false)
         PhoneWatchSyncManager.shared.requestSyncSnapshot(
             delayNanoseconds: 8_000_000_000,
             minimumInterval: 12
@@ -79,13 +72,6 @@ struct DeleteReminderIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let granted = await NotificationManager.shared.requestAuthorization()
-        guard granted else {
-            return .result(
-                dialog: IntentDialog("Les notifications ne sont pas autorisées. Active-les dans Réglages pour recevoir les rappels.")
-            )
-        }
-
         let container = try makeContainer()
         let context = container.mainContext
 
@@ -97,15 +83,10 @@ struct DeleteReminderIntent: AppIntent {
         }
 
         for reminder in matching {
-            await NotificationManager.shared.cancelReminderAndWait(reminder)
+            NotificationManager.shared.cancelReminder(reminder)
             context.delete(reminder)
         }
         try context.save()
-        Task {
-            await NotificationManager.shared.removeOrphanedNotifications(
-                validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
-            )
-        }
         PhoneWatchSyncManager.shared.requestSyncSnapshot(
             delayNanoseconds: 8_000_000_000,
             minimumInterval: 12
@@ -130,13 +111,6 @@ struct CompleteReminderIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let granted = await NotificationManager.shared.requestAuthorization()
-        guard granted else {
-            return .result(
-                dialog: IntentDialog("Les notifications ne sont pas autorisées. Active-les dans Réglages pour recevoir les rappels.")
-            )
-        }
-
         let container = try makeContainer()
         let context = container.mainContext
 
@@ -149,14 +123,9 @@ struct CompleteReminderIntent: AppIntent {
 
         for reminder in matching {
             reminder.isCompleted = true
-            await NotificationManager.shared.cancelReminderAndWait(reminder)
+            NotificationManager.shared.cancelReminder(reminder)
         }
         try context.save()
-        Task {
-            await NotificationManager.shared.removeOrphanedNotifications(
-                validReminderIDs: Set((try? context.fetch(FetchDescriptor<Reminder>()))?.map(\.id) ?? [])
-            )
-        }
         PhoneWatchSyncManager.shared.requestSyncSnapshot(
             delayNanoseconds: 8_000_000_000,
             minimumInterval: 12
